@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+
+{% block title %}User Guide - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .guide-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .guide-nav {
+        position: sticky;
+        top: 100px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .guide-nav a {
+        color: #1e3c72;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        display: block;
+        border-left: 3px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .guide-nav a:hover, .guide-nav a.active {
+        background: #e9ecef;
+        border-left-color: #f6d365;
+        padding-left: 1.5rem;
+    }
+    
+    .guide-section {
+        background: white;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        scroll-margin-top: 120px;
+    }
+    
+    .guide-section h2 {
+        color: #1e3c72;
+        border-bottom: 3px solid #f6d365;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .guide-section h3 {
+        color: #2a5298;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .feature-card {
+        background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+    }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .role-faculty { background: #e3f2fd; color: #1976d2; }
+    .role-hod { background: #f3e5f5; color: #7b1fa2; }
+    .role-dean { background: #fff3e0; color: #e65100; }
+    .role-principal { background: #fce4ec; color: #c2185b; }
+    .role-admin { background: #e8f5e9; color: #2e7d32; }
+    .role-all { background: #f5f5f5; color: #616161; }
+    
+    .workflow-step {
+        position: relative;
+        padding-left: 3rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .workflow-step::before {
+        content: attr(data-step);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .code-block {
+        background: #f8f9fa;
+        border-left: 4px solid #f6d365;
+        padding: 1rem;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        margin: 1rem 0;
+    }
+    
+    .tip-box {
+        background: #fff9e6;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 5px;
+        margin: 1rem 0;
+    }
+    
+    .tip-box i {
+        color: #ffc107;
+        margin-right: 0.5rem;
+    }
+    
+    .screenshot-placeholder {
+        background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+        border: 2px dashed #999;
+        border-radius: 10px;
+        padding: 3rem;
+        text-align: center;
+        color: #666;
+        margin: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-header text-center">
+    <div class="container">
+        <h1><i class="bi bi-book"></i> SJEC Publication Portal User Guide</h1>
+        <p class="lead mb-0">Comprehensive documentation for all portal features and workflows</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Sidebar Navigation -->
+        <div class="col-lg-3">
+            <div class="guide-nav">
+                <h5 class="mb-3">Quick Navigation</h5>
+                <a href="#overview">Overview</a>
+                <a href="#getting-started">Getting Started</a>
+                <a href="#roles">User Roles</a>
+                <a href="#publications">Publications</a>
+                <a href="#approval-workflow">Approval Workflow</a>
+                <a href="#wallet-system">Wallet & Incentives</a>
+                <a href="#statistics">Statistics</a>
+                <a href="#feedback">Feedback System</a>
+                <a href="#circulars">Circulars</a>
+                <a href="#notifications">Notifications</a>
+                <a href="#abbreviations">Abbreviations</a>
+                <a href="#support">Support</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <!-- Overview Section -->
+            <section id="overview" class="guide-section">
+                <h2><i class="bi bi-info-circle"></i> Overview</h2>
+                <p class="lead">The SJEC Faculty Publication Portal is a comprehensive system designed to manage faculty publications, research incentives, and approval workflows.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h4><i class="bi bi-file-earmark-text"></i> Publication Management</h4>
+                            <p>Submit and track conference papers, journal articles, books, and patents.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h4><i class="bi bi-wallet2"></i> Incentive System</h4>
+                            <p>Automatic calculation of EPP points and financial incentives based on publication type.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h4><i class="bi bi-diagram-3"></i> Multi-level Approval</h4>
+                            <p>Structured workflow involving HoD, Dean, Principal, and Director approvals.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h4><i class="bi bi-graph-up"></i> Analytics & Reports</h4>
+                            <p>Comprehensive statistics, department-wise reports, and export capabilities.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Getting Started Section -->
+            <section id="getting-started" class="guide-section">
+                <h2><i class="bi bi-play-circle"></i> Getting Started</h2>
+                
+                <h3>1. Registration</h3>
+                <div class="workflow-step" data-step="1">
+                    <strong>Access the Portal:</strong> Navigate to the SJEC Publication Portal URL.
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <strong>Click Register:</strong> On the login page, click "Register here" link.
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <strong>Fill Details:</strong> Enter your name, SJEC email, department, and password.
+                </div>
+                <div class="workflow-step" data-step="4">
+                    <strong>Verify Email:</strong> Check your SJEC inbox for the welcome email with login credentials.
+                </div>
+
+                <div class="tip-box mt-4">
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <strong>Tip:</strong> Use your official SJEC email (@sjec.ac.in) for registration. Personal emails are not accepted.
+                </div>
+
+                <h3 class="mt-4">2. First Login</h3>
+                <div class="workflow-step" data-step="1">
+                    <strong>Login:</strong> Use your email and password to login.
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <strong>Complete Profile:</strong> Upload profile picture and update your details.
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <strong>Explore Dashboard:</strong> Familiarize yourself with the dashboard layout.
+                </div>
+            </section>
+
+            <!-- User Roles Section -->
+            <section id="roles" class="guide-section">
+                <h2><i class="bi bi-people"></i> User Roles & Permissions</h2>
+                
+                <h3>Available Roles:</h3>
+                
+                <div class="mb-3">
+                    <span class="role-badge role-faculty">FACULTY</span>
+                    <p><strong>Permissions:</strong> Submit publications, view own statistics, receive notifications, provide feedback.</p>
+                </div>
+
+                <div class="mb-3">
+                    <span class="role-badge role-hod">HEAD OF DEPARTMENT (HoD)</span>
+                    <p><strong>Permissions:</strong> Review and approve/reject department publications, view department statistics, manage faculty submissions.</p>
+                </div>
+
+                <div class="mb-3">
+                    <span class="role-badge role-dean">DEAN R&D</span>
+                    <p><strong>Permissions:</strong> Approve publications after HoD approval, view college-wide statistics, manage research initiatives.</p>
+                </div>
+
+                <div class="mb-3">
+                    <span class="role-badge role-principal">PRINCIPAL / DIRECTOR</span>
+                    <p><strong>Permissions:</strong> Final approval authority, view all publications, access complete analytics, approve incentive disbursements.</p>
+                </div>
+
+                <div class="mb-3">
+                    <span class="role-badge role-admin">ADMIN</span>
+                    <p><strong>Permissions:</strong> User management, system configuration, bulk operations, circular management, complete system access.</p>
+                </div>
+
+                <div class="mb-3">
+                    <span class="role-badge role-all">ACM MEMBER</span>
+                    <p><strong>Permissions:</strong> Review publications for ACM-specific journals, provide technical validation.</p>
+                </div>
+            </section>
+
+            <!-- Publications Section -->
+            <section id="publications" class="guide-section">
+                <h2><i class="bi bi-journal-text"></i> Managing Publications</h2>
+                
+                <h3>Publication Types:</h3>
+                <ul>
+                    <li><strong>Conference Papers:</strong> Papers presented at national/international conferences</li>
+                    <li><strong>Journal Articles:</strong> Articles published in peer-reviewed journals (SCI/Scopus/UGC/Others)</li>
+                    <li><strong>Books:</strong> Textbooks, edited volumes, monographs</li>
+                    <li><strong>Book Chapters:</strong> Chapters contributed to edited volumes</li>
+                    <li><strong>Patents:</strong> Filed or granted patents</li>
+                </ul>
+
+                <h3 class="mt-4">Submitting a Publication:</h3>
+                <div class="workflow-step" data-step="1">
+                    <strong>Navigate to Dashboard:</strong> Click "Submit New Publication" button.
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <strong>Select Type:</strong> Choose publication type (Conference/Journal/Book/etc.).
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <strong>Fill Details:</strong>
+                    <ul>
+                        <li>Title and authors (mark yourself as CA/FA/ACM)</li>
+                        <li>Publication details (venue, date, DOI, etc.)</li>
+                        <li>Upload PDF and supporting documents</li>
+                        <li>For journals: Specify indexing (SCI/Scopus/UGC)</li>
+                        <li>For conferences: Specify level (International/National)</li>
+                    </ul>
+                </div>
+                <div class="workflow-step" data-step="4">
+                    <strong>Submit:</strong> Click "Submit Publication" to send for approval.
+                </div>
+
+                <div class="tip-box mt-4">
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <strong>Important:</strong> Ensure all required fields are filled and documents are uploaded. Incomplete submissions may be rejected.
+                </div>
+
+                <h3 class="mt-4">Author Types:</h3>
+                <ul>
+                    <li><strong>CA (Corresponding Author):</strong> Primary contact for the publication</li>
+                    <li><strong>FA (First Author):</strong> Principal investigator or lead researcher</li>
+                    <li><strong>ACM (Additional Co-Member):</strong> Contributing authors from SJEC</li>
+                </ul>
+            </section>
+
+            <!-- Approval Workflow Section -->
+            <section id="approval-workflow" class="guide-section">
+                <h2><i class="bi bi-diagram-3"></i> Approval Workflow</h2>
+                
+                <h3>Standard Workflow:</h3>
+                <div class="workflow-step" data-step="1">
+                    <strong>Faculty Submission:</strong> Faculty submits publication with all required details.
+                    <br><span class="badge bg-secondary mt-1">Status: Pending HoD</span>
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <strong>HoD Review:</strong> Department HoD reviews and approves/rejects.
+                    <br><span class="badge bg-info mt-1">Status: Pending Dean</span>
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <strong>Dean Review:</strong> Dean R&D reviews and approves/rejects.
+                    <br><span class="badge bg-primary mt-1">Status: Pending Principal/Director</span>
+                </div>
+                <div class="workflow-step" data-step="4">
+                    <strong>Final Approval:</strong> Principal/Director provides final approval.
+                    <br><span class="badge bg-success mt-1">Status: Approved</span>
+                </div>
+
+                <h3 class="mt-4">Special Cases:</h3>
+                <ul>
+                    <li><strong>ACM Publications:</strong> Auto-forwarded to ACM members for technical review</li>
+                    <li><strong>Rejection:</strong> If rejected at any level, publication returns to faculty with comments</li>
+                    <li><strong>Editing:</strong> Faculty can request edit permission from HoD for approved publications</li>
+                </ul>
+
+                <div class="tip-box mt-4">
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <strong>Notification:</strong> You'll receive email notifications at each approval stage. Check your SJEC inbox regularly.
+                </div>
+            </section>
+
+            <!-- Wallet System Section -->
+            <section id="wallet-system" class="guide-section">
+                <h2><i class="bi bi-wallet2"></i> Wallet & Incentive System</h2>
+                
+                <h3>EPP Points (Excellence Performance Points):</h3>
+                <p>Publications earn EPP points based on their type and impact:</p>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead style="background-color: #0a1f44; color: white;">
+                            <tr>
+                                <th>Publication Type</th>
+                                <th>EPP Points</th>
+                                <th>Incentive (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SCI Journal Article</td>
+                                <td>100</td>
+                                <td>₹20,000 - ₹50,000</td>
+                            </tr>
+                            <tr>
+                                <td>Scopus Journal Article</td>
+                                <td>75</td>
+                                <td>₹15,000 - ₹30,000</td>
+                            </tr>
+                            <tr>
+                                <td>UGC Journal Article</td>
+                                <td>50</td>
+                                <td>₹10,000 - ₹20,000</td>
+                            </tr>
+                            <tr>
+                                <td>International Conference</td>
+                                <td>40</td>
+                                <td>₹8,000 - ₹15,000</td>
+                            </tr>
+                            <tr>
+                                <td>National Conference</td>
+                                <td>25</td>
+                                <td>₹5,000 - ₹10,000</td>
+                            </tr>
+                            <tr>
+                                <td>Book (Textbook)</td>
+                                <td>120</td>
+                                <td>₹25,000 - ₹60,000</td>
+                            </tr>
+                            <tr>
+                                <td>Book Chapter</td>
+                                <td>30</td>
+                                <td>₹6,000 - ₹12,000</td>
+                            </tr>
+                            <tr>
+                                <td>Patent (Granted)</td>
+                                <td>150</td>
+                                <td>₹30,000 - ₹75,000</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="mt-4">Viewing Your Wallet:</h3>
+                <p>Access your wallet from the dashboard to see:</p>
+                <ul>
+                    <li>Total EPP points earned</li>
+                    <li>Credits received (in ₹)</li>
+                    <li>Debits made (if any)</li>
+                    <li>Available balance</li>
+                    <li>Transaction history</li>
+                </ul>
+
+                <div class="tip-box mt-4">
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <strong>Note:</strong> Incentives are credited only after final approval by Principal/Director.
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section id="statistics" class="guide-section">
+                <h2><i class="bi bi-graph-up"></i> Statistics & Analytics</h2>
+                
+                <h3>Faculty Statistics:</h3>
+                <ul>
+                    <li>Total publications count</li>
+                    <li>Publication type breakdown</li>
+                    <li>Total EPP points earned</li>
+                    <li>Yearly publication trends</li>
+                    <li>Collaboration networks</li>
+                </ul>
+
+                <h3 class="mt-4">Department Statistics (for HoDs):</h3>
+                <ul>
+                    <li>Department-wise publication count</li>
+                    <li>Faculty performance comparison</li>
+                    <li>Top performers</li>
+                    <li>Pending approvals</li>
+                </ul>
+
+                <h3 class="mt-4">College-wide Statistics (for Admin/Dean/Principal):</h3>
+                <ul>
+                    <li>Overall publication trends</li>
+                    <li>Department comparisons</li>
+                    <li>Year-wise growth</li>
+                    <li>Export to Excel/PDF</li>
+                </ul>
+            </section>
+
+            <!-- Feedback System Section -->
+            <section id="feedback" class="guide-section">
+                <h2><i class="bi bi-chat-left-text"></i> Feedback System</h2>
+                
+                <h3>Submitting Feedback:</h3>
+                <div class="workflow-step" data-step="1">
+                    <strong>Navigate:</strong> Go to "My Feedback" from the navbar.
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <strong>Fill Form:</strong> Enter subject, description, and category.
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <strong>Attach Screenshot:</strong> Optional - upload screenshot if reporting a bug.
+                </div>
+                <div class="workflow-step" data-step="4">
+                    <strong>Submit:</strong> Click submit and track response.
+                </div>
+
+                <h3 class="mt-4">Feedback Categories:</h3>
+                <ul>
+                    <li><strong>Bug Report:</strong> Technical issues or errors</li>
+                    <li><strong>Feature Request:</strong> Suggestions for new features</li>
+                    <li><strong>General Feedback:</strong> Comments or improvement suggestions</li>
+                    <li><strong>Support Query:</strong> Questions about using the portal</li>
+                </ul>
+            </section>
+
+            <!-- Circulars Section -->
+            <section id="circulars" class="guide-section">
+                <h2><i class="bi bi-megaphone"></i> Circulars & Announcements</h2>
+                
+                <h3>Viewing Circulars:</h3>
+                <p>Circulars are official announcements from college administration:</p>
+                <ul>
+                    <li>Research guidelines updates</li>
+                    <li>New incentive policies</li>
+                    <li>Important deadlines</li>
+                    <li>Workshop/conference announcements</li>
+                </ul>
+
+                <h3 class="mt-4">Creating Circulars (Admin only):</h3>
+                <div class="workflow-step" data-step="1">
+                    <strong>Access Circular Management:</strong> Navigate to circular section.
+                </div>
+                <div class="workflow-step" data-step="2">
+                    <strong>Create New:</strong> Fill title, content, and target departments.
+                </div>
+                <div class="workflow-step" data-step="3">
+                    <strong>Publish:</strong> Circular is sent to all relevant users via email.
+                </div>
+            </section>
+
+            <!-- Notifications Section -->
+            <section id="notifications" class="guide-section">
+                <h2><i class="bi bi-bell"></i> Notifications</h2>
+                
+                <h3>Notification Types:</h3>
+                <ul>
+                    <li><strong>Approval Updates:</strong> When your publication is approved/rejected</li>
+                    <li><strong>Assignment Alerts:</strong> When new publications are assigned for your review</li>
+                    <li><strong>Circular Announcements:</strong> New circular published</li>
+                    <li><strong>Feedback Response:</strong> Admin responds to your feedback</li>
+                    <li><strong>System Updates:</strong> Important portal updates</li>
+                </ul>
+
+                <h3 class="mt-4">Managing Notifications:</h3>
+                <p>Click the bell icon <i class="bi bi-bell"></i> in navbar to view all notifications. Red badge indicates unread count.</p>
+                
+                <div class="tip-box mt-4">
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <strong>Email Notifications:</strong> Important notifications are also sent to your SJEC email.
+                </div>
+            </section>
+
+            <!-- Abbreviations Section -->
+            <section id="abbreviations" class="guide-section">
+                <h2><i class="bi bi-card-list"></i> Common Abbreviations</h2>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead style="background-color: #0a1f44; color: white;">
+                            <tr>
+                                <th>Abbreviation</th>
+                                <th>Full Form</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>FA</strong></td><td>First Author</td></tr>
+                            <tr><td><strong>CA</strong></td><td>Corresponding Author</td></tr>
+                            <tr><td><strong>ACM</strong></td><td>Additional Co-Member</td></tr>
+                            <tr><td><strong>HoD</strong></td><td>Head of Department</td></tr>
+                            <tr><td><strong>HoR</strong></td><td>Head of Research</td></tr>
+                            <tr><td><strong>RRF</strong></td><td>Research Registration Form</td></tr>
+                            <tr><td><strong>EPP</strong></td><td>Excellence Performance Points</td></tr>
+                            <tr><td><strong>APC</strong></td><td>Article Processing Charges</td></tr>
+                            <tr><td><strong>IF</strong></td><td>Impact Factor</td></tr>
+                            <tr><td><strong>WoS</strong></td><td>Web of Science</td></tr>
+                            <tr><td><strong>SCI</strong></td><td>Science Citation Index</td></tr>
+                            <tr><td><strong>SCIE</strong></td><td>Science Citation Index Expanded</td></tr>
+                            <tr><td><strong>UGC</strong></td><td>University Grants Commission</td></tr>
+                            <tr><td><strong>DOI</strong></td><td>Digital Object Identifier</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tip-box mt-4">
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <strong>Quick Access:</strong> Click the floating button at bottom-right corner of any page to view abbreviations popup.
+                </div>
+            </section>
+
+            <!-- Support Section -->
+            <section id="support" class="guide-section">
+                <h2><i class="bi bi-headset"></i> Help & Support</h2>
+                
+                <h3>Need Help?</h3>
+                <p>If you encounter any issues or have questions:</p>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-chat-left-text"></i> Submit Feedback</h5>
+                            <p>Use the feedback system to report issues or ask questions.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-envelope"></i> Email Support</h5>
+                            <p>Contact admin at: <strong>admin@sjec.ac.in</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-book"></i> User Guide</h5>
+                            <p>Refer to this documentation for detailed instructions.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-card">
+                            <h5><i class="bi bi-people"></i> Contact HoD</h5>
+                            <p>Reach out to your department HoD for department-specific queries.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="mt-4">Quick Tips:</h3>
+                <ul>
+                    <li>Always use your official SJEC email for registration and communication</li>
+                    <li>Keep your profile updated with accurate information</li>
+                    <li>Upload high-quality PDFs of publications</li>
+                    <li>Fill all required fields when submitting publications</li>
+                    <li>Check notifications regularly for approval updates</li>
+                    <li>Mark yourself correctly as FA/CA/ACM in publications</li>
+                    <li>Keep track of deadlines for publication submissions</li>
+                </ul>
+            </section>
+
+            <!-- Back to Top Button -->
+            <div class="text-center mt-4 mb-4">
+                <button onclick="window.scrollTo({top: 0, behavior: 'smooth'});" class="btn btn-primary">
+                    <i class="bi bi-arrow-up"></i> Back to Top
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Highlight active section in navigation
+    const sections = document.querySelectorAll('.guide-section');
+    const navLinks = document.querySelectorAll('.guide-nav a');
+    
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (window.pageYOffset >= sectionTop - 150) {
+                current = section.getAttribute('id');
+            }
+        });
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+    
+    // Smooth scroll for navigation links
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                window.scrollTo({
+                    top: targetSection.offsetTop - 120,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

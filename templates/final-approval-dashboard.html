@@ -1,0 +1,548 @@
+{% extends 'base.html' %}
+
+{% block title %}Final Approval - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-shield-check"></i> Final Approval Dashboard</h2>
+            <p class="text-muted">
+                Review and approve Dean-recommended applications
+                {% if current_user.role == 'principal' %}(Principal Approval){% endif %}
+                {% if current_user.role == 'director' %}(Director Approval){% endif %}
+                {% if current_user.role == 'dean_secretary' %}(Dean Secretary){% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Final Approval</h6>
+                    <h2>{{ total_pending }}</h2>
+                    <small>Dean-approved applications</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Principal Approved</h6>
+                    <h2>{{ principal_approved_count }}</h2>
+                    <small>Waiting for Director</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Director Approved</h6>
+                    <h2>{{ director_approved_count }}</h2>
+                    <small>Waiting for Principal</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Fully Approved</h6>
+                    <h2>{{ wallet_debited_count }}</h2>
+                    <small>Wallet debited</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Applications Pending Final Approval</h5>
+        </div>
+        <div class="card-body">
+            {% if applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Wallet Status</th>
+                            <th>Dean Recommended</th>
+                            <th>Principal Status</th>
+                            <th>Director Status</th>
+                            <th>Dean Approved On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ app.applicant.name }}<br>
+                                <small class="text-muted">{{ app.applicant.department }}</small>
+                            </td>
+                            <td>
+                                {% set rrf_balance = app.applicant.wallet_balance|default(0) %}
+                                {% set epp_balance = app.applicant.epp_balance|default(0) %}
+                                {% set epp_inr = epp_balance * 2000 %}
+                                {% set total_available = rrf_balance + epp_inr %}
+                                
+                                {% if app.application_type == 'publication_incentive' %}
+                                    {# Publication Incentive is a CREDIT - show calculated amount #}
+                                    {% set credit_amount = app_amounts.get(app.id, {}).get('applicant_amount', 0) %}
+                                    <div class="text-nowrap">
+                                        <strong class="text-success">₹ {{ credit_amount|indian_format }}</strong>
+                                        <br><span class="badge bg-success">Credit to RRF</span>
+                                        <br>
+                                        <small class="text-muted">
+                                            Current RRF: ₹ {{ rrf_balance|indian_format }}<br>
+                                            EPP: {{ "%.1f"|format(epp_balance) }} (₹ {{ epp_inr|indian_format }})
+                                        </small>
+                                    </div>
+                                {% else %}
+                                    {# Conference/Journal Support - DEBIT #}
+                                    {% set required = app.dean_recommended_amount or 0 %}
+                                    <div class="text-nowrap">
+                                        <strong class="{% if total_available >= required %}text-success{% else %}text-danger{% endif %}">
+                                            ₹ {{ total_available|indian_format }}
+                                        </strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            RRF: ₹ {{ rrf_balance|indian_format }}<br>
+                                            EPP: {{ "%.1f"|format(epp_balance) }} (₹ {{ epp_inr|indian_format }})
+                                        </small>
+                                        {% if total_available < required %}
+                                        <br><span class="badge bg-danger">Insufficient</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.application_type == 'publication_incentive' %}
+                                    {# Show only the amount for selected author type - use dynamically calculated amount #}
+                                    <div class="text-nowrap">
+                                        <span class="badge bg-info">{{ app.author_type }}</span><br>
+                                        {% set applicant_amount = app_amounts.get(app.id, {}).get('applicant_amount', 0) %}
+                                        <strong>₹ {{ applicant_amount|indian_format }}</strong>
+                                        
+                                        {# Show publication category and ACM-updated details #}
+                                        {% if app.publication_category %}
+                                        <br><small class="text-muted">{{ app.publication_category }}</small>
+                                        {% endif %}
+                                        {% if app.publication_category == 'Journal' %}
+                                            {% if app.journal_quartile %}
+                                            <br><small class="text-primary">{{ app.journal_quartile }}</small>
+                                            {% endif %}
+                                            {% if app.journal_impact_factor %}
+                                            <br><small class="text-info">IF: {{ app.journal_impact_factor }}</small>
+                                            {% endif %}
+                                        {% elif app.is_national_international %}
+                                            <br><small class="text-secondary">{{ app.is_national_international }}</small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                <strong>₹ {{ (app.dean_recommended_amount or 0)|indian_format }}</strong>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.principal_approved_by %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle-fill"></i> Approved
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    {{ app.principal_approved_at.strftime('%d %b %Y') if app.principal_approved_at else '-' }}
+                                </small>
+                                {% elif app.principal_rejected %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle-fill"></i> Rejected
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    {{ app.principal_rejected_at.strftime('%d %b %Y') if app.principal_rejected_at else '-' }}
+                                </small>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.director_approved_by %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle-fill"></i> Approved
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    {{ app.director_approved_at.strftime('%d %b %Y') if app.director_approved_at else '-' }}
+                                </small>
+                                {% elif app.director_rejected %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle-fill"></i> Rejected
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    {{ app.director_rejected_at.strftime('%d %b %Y') if app.director_rejected_at else '-' }}
+                                </small>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.dean_reviewed_at.strftime('%d %b %Y') if app.dean_reviewed_at else '-' }}</td>
+                            <td>
+                                {% if app.principal_approved_by and app.director_approved_by %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-all"></i> Approved by Both
+                                </span>
+                                
+                                {# Dean Secretary Final Approval (Disperse Amount) #}
+                                {% if current_user.role == 'dean_secretary' and not app.dean_sec_approved_by %}
+                                <br>
+                                <button class="btn btn-sm btn-primary mt-2" 
+                                    onclick="showFinalApprovalModal({{ app.id }}, '{{ app.tracking_id }}', '{{ app.application_type }}')">
+                                    <i class="bi bi-cash-coin"></i> Final Approval & Disperse
+                                </button>
+                                {% elif app.dean_sec_approved_by %}
+                                <br>
+                                <span class="badge bg-info mt-1">
+                                    <i class="bi bi-check2-all"></i> Amount Dispersed
+                                </span>
+                                <br>
+                                <small class="text-muted">{{ app.dean_sec_approved_at.strftime('%d %b %Y') if app.dean_sec_approved_at else '-' }}</small>
+                                {% endif %}
+                                {% elif app.principal_rejected or app.director_rejected %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Rejected
+                                </span>
+                                <br>
+                                <button class="btn btn-sm btn-info mt-1" onclick="showRejectionDetails({{ app.id }}, 
+                                    '{{ app.principal_rejection_reason|replace("'", "\\'") if app.principal_rejected else "" }}',
+                                    '{{ app.director_rejection_reason|replace("'", "\\'") if app.director_rejected else "" }}')">
+                                    <i class="bi bi-info-circle"></i> View Reason
+                                </button>
+                                {% elif current_user.role == 'principal' and not app.principal_approved_by and not app.principal_rejected %}
+                                <button class="btn btn-sm btn-success me-1" 
+                                    onclick="approveApplication({{ app.id }}, 'Principal', '{{ app.application_type }}', {{ total_available }}, {{ required }})">
+                                    <i class="bi bi-check-circle"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="showRejectModal({{ app.id }}, 'Principal')">
+                                    <i class="bi bi-x-circle"></i> Reject
+                                </button>
+                                {% elif current_user.role == 'director' and not app.director_approved_by and not app.director_rejected %}
+                                <button class="btn btn-sm btn-success me-1" 
+                                    onclick="approveApplication({{ app.id }}, 'Director', '{{ app.application_type }}', {{ total_available }}, {{ required }})">
+                                    <i class="bi bi-check-circle"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="showRejectModal({{ app.id }}, 'Director')">
+                                    <i class="bi bi-x-circle"></i> Reject
+                                </button>
+                                {% elif current_user.role == 'dean_secretary' %}
+                                <!-- Dean Secretary can approve as Principal or Director individually -->
+                                {% if not app.principal_approved_by and not app.principal_rejected %}
+                                <button class="btn btn-sm btn-success btn-sm me-1" 
+                                    onclick="approveApplication({{ app.id }}, 'Principal', '{{ app.application_type }}', {{ total_available }}, {{ required }})">
+                                    <i class="bi bi-check-circle"></i> Approve as Principal
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-sm" onclick="showRejectModal({{ app.id }}, 'Principal')">
+                                    <i class="bi bi-x-circle"></i> Reject as Principal
+                                </button>
+                                <br>
+                                {% endif %}
+                                {% if not app.director_approved_by and not app.director_rejected %}
+                                <button class="btn btn-sm btn-success btn-sm me-1 mt-1" 
+                                    onclick="approveApplication({{ app.id }}, 'Director', '{{ app.application_type }}', {{ total_available }}, {{ required }})">
+                                    <i class="bi bi-check-circle"></i> Approve as Director
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-sm mt-1" onclick="showRejectModal({{ app.id }}, 'Director')">
+                                    <i class="bi bi-x-circle"></i> Reject as Director
+                                </button>
+                                {% endif %}
+                                {% elif current_user.role == 'dean' %}
+                                <span class="badge bg-secondary">Dean View Only</span>
+                                {% else %}
+                                <span class="badge bg-info">Already Processed</span>
+                                {% endif %}
+                                
+                                <br>
+                                <button class="btn btn-sm btn-outline-primary mt-1" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No applications pending final approval at this time.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Approval Confirmation Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> Confirm Approval</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to approve this application as <strong id="approverRole"></strong>?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    <strong>Note:</strong> Once both Principal and Director approve, the wallet will be automatically debited and EPP will be awarded (if applicable).
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="approvalForm" method="POST">
+                    <input type="hidden" id="approveAsRole" name="approve_as_role">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Confirm Approval
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-circle"></i> Reject Application</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rejectForm" method="POST">
+                <input type="hidden" id="rejectAsRole" name="reject_as_role">
+                <div class="modal-body">
+                    <p>You are rejecting this application as <strong id="rejecterRole"></strong></p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>Warning:</strong> This action cannot be undone. Please provide a clear reason for rejection.
+                    </div>
+                    <div class="mb-3">
+                        <label for="rejectionReason" class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejectionReason" name="rejection_reason" rows="4" 
+                                  placeholder="Provide detailed reason for rejecting this application..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Confirm Rejection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Details Modal -->
+<div class="modal fade" id="rejectionDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-circle"></i> Rejection Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="principalRejectionSection" style="display: none;">
+                    <h6 class="text-danger"><i class="bi bi-person-x"></i> Principal Rejection</h6>
+                    <p id="principalRejectionReason" class="border p-3 bg-light rounded"></p>
+                </div>
+                <div id="directorRejectionSection" style="display: none;" class="mt-3">
+                    <h6 class="text-danger"><i class="bi bi-person-x"></i> Director Rejection</h6>
+                    <p id="directorRejectionReason" class="border p-3 bg-light rounded"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveApplication(appId, role, appType, walletBalance, requiredAmount) {
+    // Validate wallet balance for Conference Registration and Journal Support
+    if (appType === 'conference_registration' || appType === 'journal_support') {
+        if (walletBalance < requiredAmount) {
+            // Show error alert
+            const shortfall = requiredAmount - walletBalance;
+            alert(
+                `⚠️ INSUFFICIENT WALLET BALANCE\n\n` +
+                `Cannot approve this ${appType.replace('_', ' ')} application.\n\n` +
+                `Faculty Wallet Balance: ₹${walletBalance.toFixed(2)}\n` +
+                `Required Amount: ₹${requiredAmount.toFixed(2)}\n` +
+                `Shortfall: ₹${shortfall.toFixed(2)}\n\n` +
+                `The faculty needs to have sufficient funds (RRF + EPP) before approval can be granted.`
+            );
+            return; // Stop the approval process
+        }
+    }
+    
+    // If validation passes or it's a publication incentive (credit), show approval modal
+    const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+    const form = document.getElementById('approvalForm');
+    const roleSpan = document.getElementById('approverRole');
+    const roleInput = document.getElementById('approveAsRole');
+    
+    form.action = `/final-approval/mark-approved/${appId}`;
+    roleSpan.textContent = role;
+    roleInput.value = role;
+    
+    modal.show();
+}
+
+function showRejectModal(appId, role) {
+    const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    const form = document.getElementById('rejectForm');
+    const roleSpan = document.getElementById('rejecterRole');
+    const roleInput = document.getElementById('rejectAsRole');
+    const reasonField = document.getElementById('rejectionReason');
+    
+    form.action = `/final-approval/reject/${appId}`;
+    roleSpan.textContent = role;
+    roleInput.value = role;
+    reasonField.value = '';
+    
+    modal.show();
+}
+
+function showRejectionDetails(appId, principalReason, directorReason) {
+    const modal = new bootstrap.Modal(document.getElementById('rejectionDetailsModal'));
+    
+    const principalSection = document.getElementById('principalRejectionSection');
+    const directorSection = document.getElementById('directorRejectionSection');
+    const principalReasonElem = document.getElementById('principalRejectionReason');
+    const directorReasonElem = document.getElementById('directorRejectionReason');
+    
+    if (principalReason) {
+        principalSection.style.display = 'block';
+        principalReasonElem.textContent = principalReason;
+    } else {
+        principalSection.style.display = 'none';
+    }
+    
+    if (directorReason) {
+        directorSection.style.display = 'block';
+        directorReasonElem.textContent = directorReason;
+    } else {
+        directorSection.style.display = 'none';
+    }
+    
+    modal.show();
+}
+
+function showFinalApprovalModal(appId, trackingId, appType) {
+    const modal = new bootstrap.Modal(document.getElementById('finalApprovalModal'));
+    const form = document.getElementById('finalApprovalForm');
+    const trackingIdSpan = document.getElementById('finalTrackingId');
+    const appTypeSpan = document.getElementById('finalAppType');
+    
+    form.action = `/final-approval/disperse/${appId}`;
+    trackingIdSpan.textContent = trackingId;
+    appTypeSpan.textContent = appType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Reset form fields
+    document.getElementById('approvalDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('principalSignAttached').checked = false;
+    document.getElementById('directorSignAttached').checked = false;
+    document.getElementById('finalComments').value = '';
+    
+    modal.show();
+}
+
+function viewApplication(appId) {
+    window.location.href = `/applications/view/${appId}`;
+}
+</script>
+
+<!-- Final Approval Modal (Dean Secretary Disperse Amount) -->
+<div class="modal fade" id="finalApprovalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-cash-coin"></i> Final Approval & Disperse Amount</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="finalApprovalForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Application:</strong> <span id="finalTrackingId"></span><br>
+                        <strong>Type:</strong> <span id="finalAppType"></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="approvalDate" class="form-label">
+                            <i class="bi bi-calendar-check"></i> Date of Approval/Disbursement <span class="text-danger">*</span>
+                        </label>
+                        <input type="date" class="form-control" id="approvalDate" name="approval_date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-file-earmark-pdf"></i> Signatures Attached (Optional)</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="principalSignAttached" name="principal_sign_attached">
+                            <label class="form-check-label" for="principalSignAttached">
+                                Principal signature attached
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="directorSignAttached" name="director_sign_attached">
+                            <label class="form-check-label" for="directorSignAttached">
+                                Director signature attached
+                            </label>
+                        </div>
+                        <small class="text-muted">Check if physical signatures have been collected and attached to the document.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="finalComments" class="form-label">
+                            <i class="bi bi-chat-left-text"></i> Comments (Optional)
+                        </label>
+                        <textarea class="form-control" id="finalComments" name="comments" rows="3" 
+                            placeholder="Any additional comments or notes for this disbursement..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>Note:</strong> This action will mark the application as fully processed and the amount will be dispersed to the faculty's wallet.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-all"></i> Confirm & Disperse
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+</style>
+{% endblock %}

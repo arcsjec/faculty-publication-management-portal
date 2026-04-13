@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}HOD Review - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-clipboard-check"></i> HOD - Review Department Applications</h2>
+            <p class="text-muted">Review applications from your department faculty</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Review</h6>
+                    <h2>{{ pending_count }}</h2>
+                    <small>Applications awaiting your review</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Approved by You</h6>
+                    <h2>{{ approved_count }}</h2>
+                    <small>Applications you approved</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Rejected by You</h6>
+                    <h2>{{ rejected_count }}</h2>
+                    <small>Applications you rejected</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Total Reviewed</h6>
+                    <h2>{{ total_reviewed }}</h2>
+                    <small>All applications reviewed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3" id="reviewTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                Pending Review <span class="badge bg-danger ms-1">{{ pending_count }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reviewed-tab" data-bs-toggle="tab" data-bs-target="#reviewed" type="button" role="tab">
+                Reviewed by You <span class="badge bg-secondary ms-1">{{ total_reviewed }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                My Department Applications <span class="badge bg-secondary ms-1">{{ all_applications|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="reviewTabsContent">
+        <!-- Pending Review Tab -->
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            {% if pending_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Title/Purpose</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in pending_applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}</td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                {{ app.title_of_paper[:60] }}...
+                                {% else %}
+                                {{ app.title_of_paper[:60] }}...
+                                {% endif %}
+                            </td>
+                            <td>{{ app.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="showReviewModal({{ app.id }}, 'approve')">
+                                    <i class="bi bi-check-circle"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="showReviewModal({{ app.id }}, 'reject')">
+                                    <i class="bi bi-x-circle"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No pending applications to review at this time.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Reviewed Tab -->
+        <div class="tab-pane fade" id="reviewed" role="tabpanel">
+            {% if reviewed_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Your Decision</th>
+                            <th>Your Comments</th>
+                            <th>Reviewed On</th>
+                            <th>Current Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in reviewed_applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}</td>
+                            <td>
+                                <span class="badge {% if app.hod_approved %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if app.hod_approved %}Approved{% else %}Rejected{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ app.hod_comments[:50] if app.hod_comments else '-' }}</td>
+                            <td>{{ app.hod_reviewed_at.strftime('%d %b %Y') if app.hod_reviewed_at else '-' }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if app.status == 'hod_approved' %}bg-success
+                                    {% elif app.status == 'rejected' %}bg-danger
+                                    {% elif app.status == 'acm_review' %}bg-warning
+                                    {% elif app.status == 'acm_approved' or app.status == 'dean_approved' %}bg-primary
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ app.status|replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> You haven't reviewed any applications yet.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- My Department Applications Tab -->
+        <div class="tab-pane fade" id="all" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Submitted</th>
+                            <th>HOD Status</th>
+                            <th>Current Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in all_applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}</td>
+                            <td>{{ app.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                {% if app.hod_approved == True %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif app.hod_approved == False %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if app.status == 'submitted' %}bg-warning
+                                    {% elif app.status == 'hod_approved' %}bg-success
+                                    {% elif app.status == 'rejected' %}bg-danger
+                                    {% elif app.status == 'acm_review' %}bg-info
+                                    {% elif app.status == 'acm_approved' or app.status == 'dean_approved' %}bg-primary
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ app.status|replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">HOD Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewFormContainer">
+                    <form id="reviewForm">
+                        <input type="hidden" id="review_app_id" name="app_id">
+                        <input type="hidden" id="review_decision" name="decision">
+                        
+                        <div class="alert alert-info" id="reviewDecisionAlert">
+                            <i class="bi bi-info-circle"></i> <span id="reviewDecisionText"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">HOD Comments / Recommendations <span class="text-danger" id="commentsRequired">*</span></label>
+                            <textarea class="form-control" id="review_comments" name="comments" rows="4"
+                                placeholder="Please provide your detailed review comments..."></textarea>
+                            <small class="text-muted" id="commentsHelp">Explain your decision and provide recommendations if any.</small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Note:</strong> Your review decision is final and cannot be changed. 
+                            If approved, the application will be forwarded to the ACM panel for review.
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewApplication(appId) {
+    window.location.href = `/applications/view/${appId}`;
+}
+
+function showReviewModal(appId, decision) {
+    document.getElementById('review_app_id').value = appId;
+    document.getElementById('review_decision').value = decision;
+    document.getElementById('review_comments').value = '';
+    
+    const decisionText = decision === 'approve' ? 
+        'You are about to APPROVE this application and forward it to the ACM panel.' : 
+        'You are about to REJECT this application.';
+    document.getElementById('reviewDecisionText').textContent = decisionText;
+    
+    const alertDiv = document.getElementById('reviewDecisionAlert');
+    const commentsTextarea = document.getElementById('review_comments');
+    const commentsRequired = document.getElementById('commentsRequired');
+    const commentsHelp = document.getElementById('commentsHelp');
+    
+    if (decision === 'approve') {
+        alertDiv.className = 'alert alert-success';
+        commentsTextarea.removeAttribute('required');
+        commentsRequired.style.display = 'none';
+        commentsHelp.textContent = 'Comments are optional for approval.';
+    } else {
+        alertDiv.className = 'alert alert-danger';
+        commentsTextarea.setAttribute('required', 'required');
+        commentsRequired.style.display = 'inline';
+        commentsHelp.textContent = 'Comments are mandatory when rejecting an application.';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+    modal.show();
+}
+
+function submitReview() {
+    const appId = document.getElementById('review_app_id').value;
+    const decision = document.getElementById('review_decision').value;
+    const comments = document.getElementById('review_comments').value.trim();
+    
+    // Validate comments for rejection
+    if (decision === 'reject' && !comments) {
+        showToast('Comments are required when rejecting an application.', 'warning', 'Validation Error');
+        return;
+    }
+    
+    // Show loading
+    const submitBtn = event.target;
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting...';
+    
+    fetch(`/hod/review/${appId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            decision: decision,
+            comments: comments
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
+            // Show success toast
+            const title = decision === 'approve' ? 'Application Approved' : 'Application Rejected';
+            showToast(data.message, 'success', title);
+            // Reload after 1.5 seconds
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.error || 'Failed to submit review', 'error', 'Submission Failed');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while submitting review. Please try again.', 'error', 'Network Error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+</script>
+
+{% endblock %}

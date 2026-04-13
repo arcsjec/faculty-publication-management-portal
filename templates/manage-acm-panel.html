@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}ACM Panel Management - SJEC{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-people-fill"></i> Assessment Committee Members (ACM) Panel</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                    <i class="bi bi-person-plus"></i> Add Member
+                </button>
+            </div>
+
+            <!-- Info Alert -->
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                <strong>About ACM Panel:</strong> Select 3 faculty members to review and assess applications for conference registration, publication incentives, and journal support. At least 2 members must approve an application for it to proceed to your review.
+            </div>
+
+            <!-- Current Panel -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Current ACM Panel Members ({{ acm_members|length }} / 3)</h5>
+                </div>
+                <div class="card-body">
+                    {% if acm_members %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                    <th>Appointed Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in acm_members %}
+                                <tr>
+                                    <td><strong>{{ member.member.name }}</strong></td>
+                                    <td>{{ member.member.email }}</td>
+                                    <td>{{ member.member.department.name if member.member.department else 'N/A' }}</td>
+                                    <td>{{ member.appointed_at.strftime('%d %b %Y') }}</td>
+                                    <td>
+                                        {% if member.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if member.is_active %}
+                                            <button class="btn btn-warning" 
+                                                    onclick='deactivateMember({{ member.id }}, {{ member.member.name|tojson }})'
+                                                    title="Deactivate">
+                                                <i class="bi bi-pause-circle"></i> Deactivate
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-success" 
+                                                    onclick='activateMember({{ member.id }}, {{ member.member.name|tojson }})'
+                                                    title="Activate">
+                                                <i class="bi bi-play-circle"></i> Activate
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-danger" 
+                                                    onclick='removeMember({{ member.id }}, {{ member.member.name|tojson }})'
+                                                    title="Remove">
+                                                <i class="bi bi-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning text-center mb-0">
+                        <i class="bi bi-exclamation-triangle fs-1 d-block mb-3"></i>
+                        <h5>No ACM Members Appointed</h5>
+                        <p class="mb-3">You need to appoint 3 faculty members to form the Assessment Committee.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                            <i class="bi bi-person-plus"></i> Add First Member
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            {% if acm_members %}
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">{{ pending_applications }}</h3>
+                            <p class="text-muted mb-0">Pending ACM Review</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h3 class="text-success">{{ acm_approved }}</h3>
+                            <p class="text-muted mb-0">ACM Approved</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">{{ awaiting_dean }}</h3>
+                            <p class="text-muted mb-0">Awaiting Your Review</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-sjec-navy text-white">
+                <h5 class="modal-title"><i class="bi bi-person-plus"></i> Add ACM Panel Member</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('manage_acm_panel') }}">
+                <div class="modal-body">
+                    {% if acm_members|length >= 3 %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        You already have 3 active members. Please deactivate or remove a member before adding a new one.
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Faculty Member <span class="text-danger">*</span></label>
+                        <input type="text" id="facultySearch" class="form-control mb-2" placeholder="🔍 Search by name or department...">
+                        <select class="form-select" id="facultySelect" name="member_id" required size="8" style="height: auto;">
+                            <option value="">-- Select Faculty --</option>
+                            {% for faculty in available_faculty %}
+                            <option value="{{ faculty.id }}" data-name="{{ faculty.name|lower }}" data-dept="{{ (faculty.department.name if faculty.department else '')|lower }}">
+                                {{ faculty.name }} ({{ faculty.department.name if faculty.department else 'N/A' }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Only faculty members who are not already in the panel are shown.</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    {% if acm_members|length < 3 %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Add Member
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+#facultySelect {
+    min-height: 250px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+#facultySelect option {
+    padding: 8px;
+    cursor: pointer;
+}
+
+#facultySelect option:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+#facultySearch {
+    border: 2px solid #0d6efd;
+}
+
+#facultySearch:focus {
+    border-color: #0a58ca;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Faculty search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('facultySearch');
+    const facultySelect = document.getElementById('facultySelect');
+    
+    if (searchInput && facultySelect) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const options = facultySelect.querySelectorAll('option');
+            
+            options.forEach(option => {
+                if (option.value === '') {
+                    // Keep the placeholder option
+                    option.style.display = '';
+                    return;
+                }
+                
+                const name = option.getAttribute('data-name') || '';
+                const dept = option.getAttribute('data-dept') || '';
+                
+                if (name.includes(searchTerm) || dept.includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+            
+            // Auto-select first visible option if search is active
+            if (searchTerm) {
+                const firstVisible = Array.from(options).find(opt => 
+                    opt.value !== '' && opt.style.display !== 'none'
+                );
+                if (firstVisible) {
+                    facultySelect.value = firstVisible.value;
+                }
+            }
+        });
+        
+        // Clear search when modal is closed
+        const modal = document.getElementById('addMemberModal');
+        modal.addEventListener('hidden.bs.modal', function() {
+            searchInput.value = '';
+            const options = facultySelect.querySelectorAll('option');
+            options.forEach(option => option.style.display = '');
+            facultySelect.value = '';
+        });
+    }
+});
+
+function deactivateMember(memberId, memberName) {
+    if (confirm(`Deactivate ${memberName} from ACM panel?\n\nThey will no longer receive new applications to review.`)) {
+        fetch(`/acm-panel/deactivate/${memberId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function activateMember(memberId, memberName) {
+    if (confirm(`Activate ${memberName} in ACM panel?\n\nThey will start receiving applications to review.`)) {
+        fetch(`/acm-panel/activate/${memberId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function removeMember(memberId, memberName) {
+    if (confirm(`Remove ${memberName} from ACM panel permanently?\n\nThis action cannot be undone.`)) {
+        fetch(`/acm-panel/remove/${memberId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

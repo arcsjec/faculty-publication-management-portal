@@ -1,0 +1,469 @@
+/* SJEC Color Palette */
+:root {
+    --sjec-navy: #0a1f44;
+    --sjec-gold: #d4af37;
+    --sjec-white: #ffffff;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navbar */
+.bg-sjec-navy {
+    background-color: var(--sjec-navy) !important;
+}
+
+.bg-sjec-gold {
+    background-color: var(--sjec-gold) !important;
+}
+
+.navbar-brand {
+    font-size: 1.4rem;
+    font-weight: 700 !important;
+}
+
+.navbar-brand img {
+    transition: transform 0.3s ease;
+    filter: brightness(1.1) contrast(1.1);
+}
+
+.logo-enhanced {
+    filter: brightness(1.15) contrast(1.15) drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    transition: all 0.3s ease;
+}
+
+.navbar-brand:hover .logo-enhanced {
+    transform: scale(1.05);
+    filter: brightness(1.2) contrast(1.2) drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+}
+
+/* Center heading */
+.navbar-heading {
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px;
+    text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
+    transition: color 0.3s ease;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+}
+
+.navbar-heading:hover {
+    color: var(--sjec-gold) !important;
+    text-shadow: 2px 2px 4px rgba(212, 175, 55, 0.5);
+}
+
+/* Center align navbar brand */
+.navbar .position-absolute.start-50 {
+    transform: translateX(-50%) !important;
+    left: 50% !important;
+    z-index: 10;
+}
+
+.navbar-brand {
+    z-index: 10;
+    display: inline-block !important;
+    padding: 0.5rem;
+}
+
+.navbar-brand img {
+    display: block;
+}
+
+.navbar-collapse {
+    z-index: 2;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    transition: color 0.3s;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: var(--sjec-gold);
+}
+
+/* Flash Messages - Smooth fade animation */
+.alert {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Buttons */
+.btn-sjec-gold {
+    background-color: var(--sjec-gold);
+    border-color: var(--sjec-gold);
+    color: var(--sjec-navy);
+    font-weight: 600;
+}
+
+.btn-sjec-gold:hover {
+    background-color: #c49b2a;
+    border-color: #c49b2a;
+    color: var(--sjec-navy);
+}
+
+.btn-sjec-navy {
+    background-color: var(--sjec-navy);
+    border-color: var(--sjec-navy);
+    color: white;
+    font-weight: 600;
+}
+
+.btn-sjec-navy:hover {
+    background-color: #081733;
+    border-color: #081733;
+    color: white;
+}
+
+/* Cards */
+.card {
+    border-radius: 10px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600;
+}
+
+/* Text Colors */
+.text-sjec-navy {
+    color: var(--sjec-navy);
+}
+
+.text-sjec-gold {
+    color: var(--sjec-gold);
+}
+
+/* Statistics Boxes */
+.stat-box {
+    padding: 20px;
+    transition: transform 0.3s;
+}
+
+.stat-box:hover {
+    transform: translateY(-5px);
+}
+
+.stat-box h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.stat-box p {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+/* Tables */
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid var(--sjec-navy);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+}
+
+/* Footer */
+footer {
+    margin-top: auto;
+    background-color: var(--sjec-navy) !important;
+}
+
+/* Form Elements */
+.form-label {
+    color: var(--sjec-navy);
+    font-weight: 500;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--sjec-gold);
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.6em;
+}
+
+/* Alert customization */
+.alert {
+    border-radius: 8px;
+    border: none;
+}
+
+/* Shadow effects */
+.shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar-brand span {
+        font-size: 1rem;
+    }
+    
+    .stat-box h3 {
+        font-size: 2rem;
+    }
+    
+    .table {
+        font-size: 0.875rem;
+    }
+}
+
+/* Loading animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Logo */
+.navbar-brand img {
+    border-radius: 5px;
+}
+
+/* Pre code blocks */
+pre {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+code {
+    color: var(--sjec-navy);
+}
+
+/* Modal customization */
+.modal-header {
+    background-color: var(--sjec-navy);
+    color: white;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+/* Chart container */
+canvas {
+    max-height: 300px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--sjec-navy);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--sjec-gold);
+}
+
+/* Print styles */
+@media print {
+    .navbar, .btn, footer, .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd;
+    }
+}
+
+/* Floating Feedback Button */
+.floating-feedback-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    background-color: var(--sjec-gold);
+    color: var(--sjec-navy);
+    border: none;
+    border-radius: 50px;
+    padding: 15px 25px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.floating-feedback-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 16px rgba(212, 175, 55, 0.6);
+    background-color: #c49b2a;
+}
+
+.floating-feedback-btn i {
+    font-size: 1.4rem;
+    margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+    .floating-feedback-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 18px;
+        border-radius: 50%;
+    }
+    
+    .floating-feedback-btn i {
+        margin-right: 0;
+        font-size: 1.3rem;
+    }
+}
+
+/* Performance Metrics Cards */
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+    border: 1px solid #f0f0f0;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    color: white;
+    font-size: 1.8rem;
+}
+
+.metric-content h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: var(--sjec-navy);
+}
+
+.metric-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.metric-card-small {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    border-left: 4px solid transparent;
+}
+
+.metric-card-small:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
+.metric-card-small h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sjec-navy);
+}
+
+.fund-card {
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.fund-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.fund-card h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.fund-card p {
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .metric-card {
+        margin-bottom: 15px;
+    }
+    
+    .metric-content h3 {
+        font-size: 2rem;
+    }
+    
+    .metric-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .fund-card h3 {
+        font-size: 1.5rem;
+    }
+}

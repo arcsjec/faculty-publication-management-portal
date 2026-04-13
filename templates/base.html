@@ -1,0 +1,581 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SJEC Faculty Publication Portal{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/sjec-logo.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/sjec-logo.png') }}">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=5.0">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-sjec-navy sticky-top" style="padding-top: 1.5rem; padding-bottom: 1.5rem;">
+        <div class="container-fluid position-relative">
+            <!-- Logo on left -->
+            <a class="navbar-brand position-absolute start-0 ms-3" href="{{ url_for('index') }}" style="z-index: 10;">
+                <img src="{{ url_for('static', filename='images/sjec-logo.png') }}" alt="SJEC Logo" height="70" class="logo-enhanced">
+            </a>
+            
+            <!-- Heading in center (clickable) -->
+            <a href="{{ url_for('index') }}" class="position-absolute start-50 translate-middle-x text-decoration-none" style="z-index: 10;">
+                <span class="navbar-heading fw-bold text-white">SJEC Publication Portal</span>
+            </a>
+            
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        
+                        {% if current_user.role == 'faculty' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('my_feedback') }}">
+                                <i class="bi bi-chat-left-text"></i> My Feedback
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        
+                        {% if current_user.role in ['hod', 'principal', 'admin', 'dean'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('list_feedbacks') }}">
+                                <i class="bi bi-chat-left-text"></i> Feedback
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="{{ url_for('notifications') }}" id="notificationBell">
+                                <i class="bi bi-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none;">
+                                    0
+                                </span>
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                {% if current_user.profile_picture %}
+                                    <img src="{{ url_for('user_profile_picture', user_id=current_user.id) }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 32px; height: 32px; object-fit: cover; object-position: top;"
+                                         alt="{{ current_user.name }}">
+                                {% else %}
+                                    <i class="bi bi-person-circle me-1"></i>
+                                {% endif %}
+                                {{ current_user.name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="bi bi-person"></i> My Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('faq') }}">
+                                <i class="bi bi-question-circle"></i> FAQ
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('user_guide') }}">
+                                <i class="bi bi-book"></i> User Guide
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                                <i class="bi bi-info-circle"></i> About
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('register') }}">
+                                <i class="bi bi-person-plus"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Toast Container for Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header" id="toastHeader">
+                <i class="bi bi-check-circle-fill text-success me-2" id="toastIcon"></i>
+                <strong class="me-auto" id="toastTitle">Notification</strong>
+                <small id="toastTime">Just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastBody">
+                Message content here
+            </div>
+        </div>
+    </div>
+    
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <!-- Main Content -->
+    <main class="container my-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-sjec-navy text-white text-center py-2">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-md-start">
+                    <p class="mb-0 small">&copy; 2025 St Joseph Engineering College, Mangaluru. All Rights Reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="{{ url_for('contact_us') }}" class="text-white text-decoration-none small">
+                        <i class="bi bi-envelope-fill"></i> Contact Us
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Abbreviations Toggle Button (Bottom Left) - Only for authenticated users -->
+    {% if current_user.is_authenticated %}
+    <button id="abbr-toggle-btn" class="btn btn-sjec-gold shadow" 
+            style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; border-radius: 50%; width: 50px; height: 50px; padding: 0; display: flex; align-items: center; justify-content: center;"
+            title="View Abbreviations">
+        <i class="bi bi-info-circle" style="font-size: 1.5rem;"></i>
+    </button>
+    
+    <!-- Abbreviations Panel (Initially Hidden) -->
+    <div id="abbr-panel" class="card shadow-lg" 
+         style="position: fixed; bottom: 80px; left: 20px; z-index: 1000; width: 350px; max-width: 90vw; display: none;">
+        <div class="card-header bg-sjec-gold text-dark d-flex justify-content-between align-items-center">
+            <strong><i class="bi bi-list-ul"></i> Abbreviations</strong>
+            <button id="abbr-close-btn" class="btn btn-sm btn-close" aria-label="Close"></button>
+        </div>
+        <div class="card-body" style="max-height: 400px; overflow-y: auto; font-size: 0.85rem;">
+            <table class="table table-sm table-borderless mb-0">
+                <tbody>
+                    <tr><td class="fw-bold">FA</td><td>First Author</td></tr>
+                    <tr><td class="fw-bold">CA</td><td>Corresponding Author</td></tr>
+                    <tr><td class="fw-bold">ACM</td><td>Assessment Committee Member</td></tr>
+                    <tr><td class="fw-bold">HoD</td><td>Head of Department</td></tr>
+                    <tr><td class="fw-bold">HoR</td><td>Head of Research</td></tr>
+                    <tr><td class="fw-bold">RRF</td><td>Research Reserve Fund</td></tr>
+                    <tr><td class="fw-bold">EPP</td><td>Earned Publication Points</td></tr>
+                    <tr><td class="fw-bold">APC</td><td>Article Processing Charges</td></tr>
+                    <tr><td class="fw-bold">IF</td><td>Impact Factor</td></tr>
+                    <tr><td class="fw-bold">WoS</td><td>Web of Science</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Abbreviations panel toggle
+        const abbrToggleBtn = document.getElementById('abbr-toggle-btn');
+        const abbrPanel = document.getElementById('abbr-panel');
+        const abbrCloseBtn = document.getElementById('abbr-close-btn');
+        
+        if (abbrToggleBtn && abbrPanel) {
+            abbrToggleBtn.addEventListener('click', function() {
+                if (abbrPanel.style.display === 'none' || abbrPanel.style.display === '') {
+                    abbrPanel.style.display = 'block';
+                } else {
+                    abbrPanel.style.display = 'none';
+                }
+            });
+            
+            if (abbrCloseBtn) {
+                abbrCloseBtn.addEventListener('click', function() {
+                    abbrPanel.style.display = 'none';
+                });
+            }
+            
+            // Close panel when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!abbrPanel.contains(event.target) && !abbrToggleBtn.contains(event.target)) {
+                    abbrPanel.style.display = 'none';
+                }
+            });
+        }
+    </script>
+    {% endif %}
+    
+    <!-- Floating Feedback Button -->
+    {% if current_user.is_authenticated %}
+    <button class="floating-feedback-btn" data-bs-toggle="modal" data-bs-target="#feedbackModal" 
+            title="Report an issue or send feedback">
+        <i class="bi bi-chat-dots-fill"></i>
+    </button>
+    {% endif %}
+    
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- About Portal Modal -->
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #0a1f44; color: white;">
+                    <h5 class="modal-title" id="aboutModalLabel">
+                        <i class="bi bi-info-circle"></i> About SJEC Faculty Publication Portal
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="fw-bold mb-3">Overview</h6>
+                    <p class="text-muted">
+                        The SJEC Faculty Publication Portal is a comprehensive digital platform designed for St Joseph Engineering College faculty to manage research publications, apply for funding support, and track academic contributions efficiently.
+                    </p>
+                    
+                    <hr>
+                    
+                    <h6 class="fw-bold mb-3">Credits</h6>
+                    <div class="mb-2">
+                        <strong>Developer:</strong><br>
+                        <span class="text-primary">Shalton Menezes</span><br>
+                        <small class="text-muted">Department of Artificial Intelligence & Machine Learning</small>
+                    </div>
+                    
+                    <div class="mb-2 mt-3">
+                        <strong>Under the Guidance of:</strong><br>
+                        <span class="text-primary">Dr. Purushothama Chippar</span><br>
+                        <small class="text-muted">Dean Research & Development</small>
+                    </div>
+                    
+                    <div class="mb-2 mt-3">
+                        <strong>Project Coordinator:</strong><br>
+                        <span class="text-primary">Dr. Ramananda H S</span><br>
+                        <small class="text-muted">Head of Research & Development<br>Department of Mathematics</small>
+                    </div>
+                    
+                    <div class="mb-2 mt-3">
+                        <strong>Tested and Verified By:</strong><br>
+                        <span class="text-primary">Luke Roman Noronha</span><br>
+                        <small class="text-muted">Department of Artificial Intelligence & Machine Learning</small>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-2">
+                        <strong>Version:</strong> <span class="badge bg-success">1.0.0</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Published:</strong> November 2025
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="alert alert-info mb-0" role="alert">
+                        <i class="bi bi-shield-lock"></i> <strong>Access:</strong> This portal is exclusively for SJEC faculty members with valid institutional credentials.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    {% if current_user.is_authenticated %}
+    <div class="modal fade" id="feedbackModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-sjec-gold text-dark">
+                    <h5 class="modal-title"><i class="bi bi-chat-dots"></i> Submit Report & Feedback</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="feedbackForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-select" name="category" required>
+                                <option value="">Select Category...</option>
+                                <option value="bug">ðŸ› Bug Report</option>
+                                <option value="feature">ðŸ’¡ Feature Request</option>
+                                <option value="content">ðŸ“„ Content Issue</option>
+                                <option value="general">ðŸ’¬ General Feedback</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Send To <span class="text-danger">*</span></label>
+                            <select class="form-select" name="recipient_role" required>
+                                <option value="">Select Recipient...</option>
+                                {% if current_user.role == 'faculty' %}
+                                <option value="hod">My HoD</option>
+                                {% endif %}
+                                <option value="dean">Dean R&D</option>
+                                <option value="principal">Principal</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Subject <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="subject" required 
+                                   placeholder="Brief description of the issue/feedback">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Message <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="message" rows="4" required
+                                      placeholder="Detailed description..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Screenshot (Optional)</label>
+                            <input type="file" class="form-control" name="screenshot" 
+                                   accept="image/*">
+                            <small class="text-muted">Upload a screenshot if it helps explain the issue</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sjec-gold">
+                            <i class="bi bi-send"></i> Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Auto-dismiss flash messages after 5 seconds -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get only existing flash alerts - ALL will auto-dismiss after 5 seconds
+            const existingAlerts = document.querySelectorAll('.container.mt-3 .alert');
+            existingAlerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000); // 5 seconds
+            });
+            
+            // Display feedback success message if it exists (will NOT auto-dismiss)
+            const feedbackSuccess = sessionStorage.getItem('feedbackSuccess');
+            if (feedbackSuccess) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.style.minWidth = '400px';
+                alertDiv.innerHTML = `
+                    <i class="bi bi-check-circle-fill"></i> ${feedbackSuccess}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
+                sessionStorage.removeItem('feedbackSuccess');
+            }
+            
+            // Fetch unread notification count
+            {% if current_user.is_authenticated %}
+            function updateNotificationCount() {
+                console.log('updateNotificationCount() called');
+                fetch('/api/notifications/unread_count')
+                    .then(response => {
+                        console.log('API response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Notification count data:', data);
+                        const badge = document.getElementById('notificationBadge');
+                        if (!badge) {
+                            console.error('Notification badge element not found');
+                            return;
+                        }
+                        
+                        console.log('Badge element found, count:', data.count);
+                        if (data.count > 0) {
+                            badge.textContent = data.count;
+                            badge.style.display = 'inline-block';
+                            console.log('Badge updated to show count:', data.count);
+                        } else {
+                            badge.style.display = 'none';
+                            console.log('Badge hidden (count is 0)');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching notification count:', error);
+                    });
+            }
+            
+            // Call on page load (we're already inside DOMContentLoaded)
+            updateNotificationCount();
+            
+            // Update count every 30 seconds
+            setInterval(updateNotificationCount, 30000);
+            {% endif %}
+            
+            // Auto-refresh page when new data arrives (only for authenticated users)
+            {% if current_user.is_authenticated %}
+            let lastCheckData = null;
+            function checkForUpdates() {
+                fetch('/api/check_updates')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Check updates endpoint not available');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (lastCheckData !== null) {
+                            // Check if notification count increased
+                            if (data.notification_count > lastCheckData.notification_count) {
+                                console.log('New notifications detected, reloading page...');
+                                location.reload();
+                                return;
+                            }
+                            // Check if publication count changed
+                            if (data.publication_count !== undefined && 
+                                data.publication_count !== lastCheckData.publication_count) {
+                                console.log('Publications updated, reloading page...');
+                                location.reload();
+                                return;
+                            }
+                            // Check if feedback count increased
+                            if (data.feedback_count !== undefined && 
+                                data.feedback_count > (lastCheckData.feedback_count || 0)) {
+                                console.log('New feedback detected, reloading page...');
+                                location.reload();
+                                return;
+                            }
+                            // Check if edit request count changed
+                            if (data.edit_request_count !== undefined && 
+                                data.edit_request_count !== lastCheckData.edit_request_count) {
+                                console.log('Edit requests updated, reloading page...');
+                                location.reload();
+                                return;
+                            }
+                        }
+                        lastCheckData = data;
+                    })
+                    .catch(error => console.error('Error checking updates:', error));
+            }
+            
+            // Check for updates every 30 seconds
+            setInterval(checkForUpdates, 30000);
+            // Initial check after 5 seconds
+            setTimeout(checkForUpdates, 5000);
+            {% endif %}
+        });
+        
+        // Professional Toast Notification Function
+        function showToast(message, type = 'success', title = null, duration = 5000) {
+            const toastEl = document.getElementById('liveToast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastBody = document.getElementById('toastBody');
+            const toastHeader = document.getElementById('toastHeader');
+            
+            // Set icon and colors based on type
+            const icons = {
+                'success': { icon: 'bi-check-circle-fill', color: 'text-success', bgClass: 'bg-success', title: 'Success' },
+                'error': { icon: 'bi-x-circle-fill', color: 'text-danger', bgClass: 'bg-danger', title: 'Error' },
+                'warning': { icon: 'bi-exclamation-triangle-fill', color: 'text-warning', bgClass: 'bg-warning', title: 'Warning' },
+                'info': { icon: 'bi-info-circle-fill', color: 'text-info', bgClass: 'bg-info', title: 'Info' }
+            };
+            
+            const config = icons[type] || icons['info'];
+            
+            // Update icon
+            toastIcon.className = `bi ${config.icon} ${config.color} me-2`;
+            
+            // Update title
+            toastTitle.textContent = title || config.title;
+            
+            // Update header background for error/warning
+            toastHeader.className = 'toast-header';
+            if (type === 'error' || type === 'warning') {
+                toastHeader.classList.add(config.bgClass, 'text-white');
+            }
+            
+            // Update message
+            toastBody.textContent = message;
+            
+            // Show toast
+            const toast = new bootstrap.Toast(toastEl, {
+                autohide: true,
+                delay: duration
+            });
+            toast.show();
+        }
+        
+        // Handle feedback form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if current_user.is_authenticated %}
+            const feedbackForm = document.getElementById('feedbackForm');
+            if (feedbackForm) {
+                feedbackForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    
+                    fetch('/feedback/submit', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            bootstrap.Modal.getInstance(document.getElementById('feedbackModal')).hide();
+                            feedbackForm.reset();
+                            // Show toast notification
+                            showToast('Your feedback has been submitted successfully! The recipient will be notified.', 'success', 'Feedback Submitted');
+                        } else {
+                            showToast(data.message || 'Failed to submit feedback', 'error', 'Submission Failed');
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error submitting feedback. Please try again.');
+                        console.error('Error:', error);
+                    });
+                });
+            }
+            {% endif %}
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

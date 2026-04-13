@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}My Statistics - SJEC Faculty Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        height: 100%;
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .metric-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+    }
+    .metric-content {
+        flex: 1;
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+        color: #2c3e50;
+    }
+    .metric-label {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin: 5px 0 0 0;
+        color: #34495e;
+    }
+    .metric-card-small {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    .metric-card-small:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .fund-card {
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
+    }
+    .fund-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    }
+    .stat-box {
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+    .quartile-card {
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+    }
+    .quartile-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Performance & Evaluation Metrics</h2>
+                    <p class="text-muted mb-0">Comprehensive overview of your research activities and achievements</p>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Publications Overview -->
+    <div class="card shadow-sm mb-4" style="border: none;">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+            <h5 class="mb-0"><i class="bi bi-journal-text"></i> Publications Overview</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <!-- Total Publications -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ performance_stats.total_publications }}</h3>
+                            <p class="metric-label">Total Publications</p>
+                            <small class="text-muted">All-time count</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scopus Publications -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ performance_stats.scopus_count }}</h3>
+                            <p class="metric-label">Scopus Indexed</p>
+                            <small class="text-muted">{{ performance_stats.scopus_percentage }}% of total</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Citations -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="bi bi-quote"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ performance_stats.total_citations }}</h3>
+                            <p class="metric-label">Total Citations</p>
+                            <small class="text-muted">Research impact</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Average Citations -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ performance_stats.avg_citations|round|int }}</h3>
+                            <p class="metric-label">Avg Citations</p>
+                            <small class="text-muted">Per publication</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Publication Engagement Metrics (PEM) -->
+    <div class="card shadow-sm mb-4" style="border: none;">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 8px 8px 0 0;">
+            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Publication Engagement Metrics (PEM)</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3 mb-4">
+                <!-- h-index -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="bi bi-trophy-fill"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ pem_metrics.h_index }}</h3>
+                            <p class="metric-label">h-index</p>
+                            <small class="text-muted">Research impact</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- i10-index -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ pem_metrics.i10_index }}</h3>
+                            <p class="metric-label">i10-index</p>
+                            <small class="text-muted">Pubs with ≥10 citations</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Average Impact Factor -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <i class="bi bi-speedometer2"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ pem_metrics.avg_impact_factor }}</h3>
+                            <p class="metric-label">Avg Impact Factor</p>
+                            <small class="text-muted">Max: {{ pem_metrics.max_impact_factor }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Citations per Year -->
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="bi bi-calendar-check"></i>
+                        </div>
+                        <div class="metric-content">
+                            <h3 class="metric-value">{{ pem_metrics.citations_per_year }}</h3>
+                            <p class="metric-label">Citations/Year</p>
+                            <small class="text-muted">{{ pem_metrics.years_active }} years active</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quartile Distribution -->
+            <div class="row">
+                <div class="col-12">
+                    <h6 class="text-muted mb-3"><i class="bi bi-bar-chart-fill"></i> Quartile Distribution</h6>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="quartile-card bg-success text-white">
+                                <div class="d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <h4 class="mb-0">{{ pem_metrics.q1_count }}</h4>
+                                        <small>Q1 Publications</small>
+                                    </div>
+                                    <i class="bi bi-star-fill fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="quartile-card bg-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <h4 class="mb-0">{{ pem_metrics.q2_count }}</h4>
+                                        <small>Q2 Publications</small>
+                                    </div>
+                                    <i class="bi bi-star-fill fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="quartile-card bg-info text-white">
+                                <div class="d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <h4 class="mb-0">{{ pem_metrics.q3_count }}</h4>
+                                        <small>Q3 Publications</small>
+                                    </div>
+                                    <i class="bi bi-star-fill fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="quartile-card bg-warning text-dark">
+                                <div class="d-flex justify-content-between align-items-center p-3">
+                                    <div>
+                                        <h4 class="mb-0">{{ pem_metrics.q4_count }}</h4>
+                                        <small>Q4 Publications</small>
+                                    </div>
+                                    <i class="bi bi-star-fill fs-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PEM Information Alert -->
+            <div class="alert alert-light mt-4 mb-0">
+                <h6><i class="bi bi-info-circle"></i> About Publication Engagement Metrics</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="mb-0 small">
+                            <li><strong>h-index:</strong> You have {{ pem_metrics.h_index }} publications with at least {{ pem_metrics.h_index }} citations each</li>
+                            <li><strong>i10-index:</strong> Number of publications with 10 or more citations</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="mb-0 small">
+                            <li><strong>Impact Factor:</strong> Average journal impact factor across all publications</li>
+                            <li><strong>Citations/Year:</strong> Research productivity measured by citations per active year</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications Statistics -->
+    <div class="card shadow-sm mb-4" style="border: none;">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 8px 8px 0 0;">
+            <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Application Statistics</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <!-- Conference Applications -->
+                <div class="col-md-4">
+                    <div class="metric-card-small">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-calendar-event fs-2 text-primary"></i>
+                                <h4 class="mb-0 mt-2">{{ performance_stats.conference_apps }}</h4>
+                                <p class="mb-0 text-muted small">Conference Registration</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ performance_stats.conference_approved }}</span>
+                                <small class="d-block text-muted">Approved</small>
+                            </div>
+                        </div>
+                        <div class="progress mt-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ (performance_stats.conference_approved / performance_stats.conference_apps * 100)|round if performance_stats.conference_apps > 0 else 0 }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {{ (performance_stats.conference_approved / performance_stats.conference_apps * 100)|round if performance_stats.conference_apps > 0 else 0 }}% approval rate
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Publication Incentive Applications -->
+                <div class="col-md-4">
+                    <div class="metric-card-small">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-award fs-2 text-warning"></i>
+                                <h4 class="mb-0 mt-2">{{ performance_stats.incentive_apps }}</h4>
+                                <p class="mb-0 text-muted small">Publication Incentive</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ performance_stats.incentive_approved }}</span>
+                                <small class="d-block text-muted">Approved</small>
+                            </div>
+                        </div>
+                        <div class="progress mt-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ (performance_stats.incentive_approved / performance_stats.incentive_apps * 100)|round if performance_stats.incentive_apps > 0 else 0 }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {{ (performance_stats.incentive_approved / performance_stats.incentive_apps * 100)|round if performance_stats.incentive_apps > 0 else 0 }}% approval rate
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Journal Support Applications -->
+                <div class="col-md-4">
+                    <div class="metric-card-small">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-journal-check fs-2 text-info"></i>
+                                <h4 class="mb-0 mt-2">{{ performance_stats.journal_apps }}</h4>
+                                <p class="mb-0 text-muted small">Journal Support</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success">{{ performance_stats.journal_approved }}</span>
+                                <small class="d-block text-muted">Approved</small>
+                            </div>
+                        </div>
+                        <div class="progress mt-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ (performance_stats.journal_approved / performance_stats.journal_apps * 100)|round if performance_stats.journal_apps > 0 else 0 }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            {{ (performance_stats.journal_approved / performance_stats.journal_apps * 100)|round if performance_stats.journal_apps > 0 else 0 }}% approval rate
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet & Research Fund Overview -->
+    <div class="card shadow-sm mb-4" style="border: none;">
+        <div class="card-header text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px 8px 0 0;">
+            <h5 class="mb-0"><i class="bi bi-wallet2"></i> Research Fund Overview</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="fund-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="text-white text-center p-3">
+                            <i class="bi bi-piggy-bank fs-1"></i>
+                            <h3 class="mb-0 mt-2">₹{{ current_user.wallet_balance|indian_format }}</h3>
+                            <p class="mb-0 small">Available RRF Balance</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="fund-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="text-white text-center p-3">
+                            <i class="bi bi-gem fs-1"></i>
+                            <h3 class="mb-0 mt-2">{{ current_user.epp_balance|round(1) }}</h3>
+                            <p class="mb-0 small">EPP Points Available</p>
+                            <small class="opacity-75">₹{{ (current_user.epp_balance * 2000)|indian_format }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="fund-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <div class="text-white text-center p-3">
+                            <i class="bi bi-cash-stack fs-1"></i>
+                            <h3 class="mb-0 mt-2">₹{{ ((current_user.wallet_balance|default(0)) + (current_user.epp_balance|default(0) * 2000))|indian_format }}</h3>
+                            <p class="mb-0 small">Total Available Funds</p>
+                            <small class="opacity-75">RRF + EPP Value</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="fund-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="text-white text-center p-3">
+                            <i class="bi bi-arrow-right-circle fs-1"></i>
+                            <p class="mb-2 mt-2 small">View Complete Wallet</p>
+                            <a href="{{ url_for('my_wallet') }}" class="btn btn-light btn-sm">
+                                <i class="bi bi-wallet2"></i> My Wallet
+                            </a>
+                            <p class="mb-0 mt-2 small opacity-75">Credits, Debits & History</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

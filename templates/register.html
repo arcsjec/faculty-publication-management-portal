@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-sjec-gold.disabled,
+    .btn-sjec-gold:disabled {
+        background-color: #ccc !important;
+        border-color: #999 !important;
+        color: #666 !important;
+        cursor: not-allowed !important;
+        opacity: 0.6;
+    }
+    
+    #email_validation_feedback {
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card-header bg-sjec-navy text-white text-center py-4">
+                <h3 class="mb-0"><i class="bi bi-person-plus"></i> Faculty Registration</h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('register') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control" ~ (" is-invalid" if form.name.errors else ""), placeholder="Enter your full name") }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control" ~ (" is-invalid" if form.email.errors else ""), placeholder="yourname@sjec.ac.in", id="email_input") }}
+                        <div class="form-text">Only @sjec.ac.in email addresses are allowed.</div>
+                        <div id="email_validation_feedback" class="mt-2" style="display: none;">
+                            <div id="email_status_message"></div>
+                        </div>
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.department.label(class="form-label") }}
+                        {{ form.department(class="form-select" ~ (" is-invalid" if form.department.errors else "")) }}
+                        {% if form.department.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.department.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control" ~ (" is-invalid" if form.password.errors else ""), placeholder="Create a strong password") }}
+                        <div class="form-text">Minimum 6 characters required.</div>
+                        {% if form.password.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.confirm_password.label(class="form-label") }}
+                        {{ form.confirm_password(class="form-control" ~ (" is-invalid" if form.confirm_password.errors else ""), placeholder="Re-enter your password") }}
+                        {% if form.confirm_password.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.confirm_password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-sjec-gold btn-lg") }}
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                <div class="small">
+                    <a href="{{ url_for('login') }}">Already have an account? Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+<script>
+// Real-time email validation
+let emailValidationTimeout;
+let emailIsValid = false;
+const emailInput = document.getElementById('email_input');
+const emailFeedback = document.getElementById('email_validation_feedback');
+const emailStatusMessage = document.getElementById('email_status_message');
+const submitButton = document.querySelector('input[type="submit"]');
+
+if (emailInput) {
+    emailInput.addEventListener('input', function() {
+        const email = this.value.trim();
+        
+        // Clear previous timeout
+        clearTimeout(emailValidationTimeout);
+        
+        // Hide feedback if email is empty
+        if (!email) {
+            emailFeedback.style.display = 'none';
+            emailIsValid = false;
+            updateSubmitButton();
+            return;
+        }
+        
+        // Show checking message
+        emailFeedback.style.display = 'block';
+        emailStatusMessage.innerHTML = '<div class="alert alert-info py-2"><i class="bi bi-hourglass-split"></i> Checking email...</div>';
+        emailIsValid = false;
+        updateSubmitButton();
+        
+        // Debounce validation - wait 1 second after user stops typing
+        emailValidationTimeout = setTimeout(function() {
+            validateEmailAddress(email);
+        }, 1000);
+    });
+}
+
+// Prevent form submission if email is invalid
+const registerForm = document.querySelector('form');
+if (registerForm) {
+    registerForm.addEventListener('submit', function(event) {
+        if (!emailIsValid) {
+            event.preventDefault();
+            alert('Please enter a valid email address before registering.');
+            emailInput.focus();
+            return false;
+        }
+    });
+}
+
+function updateSubmitButton() {
+    if (submitButton) {
+        if (emailIsValid) {
+            submitButton.disabled = false;
+            submitButton.classList.remove('disabled');
+            submitButton.value = 'Register';
+        } else {
+            submitButton.disabled = true;
+            submitButton.classList.add('disabled');
+            submitButton.value = 'Verify Email First';
+        }
+    }
+}
+
+function validateEmailAddress(email) {
+    fetch('/api/validate-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.valid) {
+            emailIsValid = true;
+            emailStatusMessage.innerHTML = `
+                <div class="alert alert-success py-2">
+                    <i class="bi bi-check-circle-fill"></i> <strong>Email is valid!</strong> ${data.message}
+                </div>`;
+        } else {
+            emailIsValid = false;
+            emailStatusMessage.innerHTML = `
+                <div class="alert alert-danger py-2">
+                    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Email validation failed:</strong> ${data.message}
+                </div>`;
+        }
+        updateSubmitButton();
+    })
+    .catch(error => {
+        console.error('Email validation error:', error);
+        emailIsValid = false;
+        emailStatusMessage.innerHTML = `
+            <div class="alert alert-warning py-2">
+                <i class="bi bi-exclamation-circle"></i> Could not validate email. Please check and try again.
+            </div>`;
+        updateSubmitButton();
+    });
+}
+
+// Initial state - disable submit until email is validated
+if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.classList.add('disabled');
+    submitButton.value = 'Verify Email First';
+}
+</script>
+{% endblock %}

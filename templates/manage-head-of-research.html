@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block title %}Head of Research Management - SJEC{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-mortarboard-fill"></i> Head of Research Management</h2>
+                <a href="{{ url_for('dean_review_applications') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dean Review
+                </a>
+            </div>
+
+            <!-- Info Alert -->
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                <strong>About Head of Research:</strong> Appoint one faculty member per department as Head of Research & Development. They will have viewing access to department statistics, publications, and user management for their department. You can change or remove them at any time.
+            </div>
+
+            <!-- Departments List -->
+            <div class="row">
+                {% for dept in departments %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-sjec-navy text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-building"></i> {{ dept.name }}
+                            </h5>
+                            <small>{{ dept.code }}</small>
+                        </div>
+                        <div class="card-body">
+                            {% if dept.head_of_research %}
+                            <!-- Current HoR -->
+                            <div class="mb-3">
+                                <label class="form-label text-muted small">Current Head of Research</label>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="bi bi-person-circle fs-1 text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ dept.head_of_research.name }}</h6>
+                                        <small class="text-muted">{{ dept.head_of_research.email }}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted small">Appointed:</span>
+                                    <span class="fw-bold">{{ dept.hor_appointed_at.strftime('%d %b %Y') if dept.hor_appointed_at else 'N/A' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-warning btn-sm" onclick='changeHoR({{ dept.id }}, {{ dept.name|tojson }})'>
+                                    <i class="bi bi-arrow-repeat"></i> Change HoR
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick='removeHoR({{ dept.id }}, {{ dept.name|tojson }})'>
+                                    <i class="bi bi-x-circle"></i> Remove HoR
+                                </button>
+                            </div>
+                            {% else %}
+                            <!-- No HoR -->
+                            <div class="text-center py-4">
+                                <i class="bi bi-person-x fs-1 text-muted d-block mb-3"></i>
+                                <p class="text-muted">No Head of Research appointed</p>
+                                <button class="btn btn-primary btn-sm" onclick='appointHoR({{ dept.id }}, {{ dept.name|tojson }})'>
+                                    <i class="bi bi-person-plus"></i> Appoint HoR
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appoint/Change HoR Modal -->
+<div class="modal fade" id="horModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-sjec-navy text-white">
+                <h5 class="modal-title"><i class="bi bi-person-plus"></i> <span id="modalTitle">Appoint</span> Head of Research</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/head-of-research/manage">
+                <input type="hidden" name="action" id="formAction" value="appoint">
+                <input type="hidden" name="department_id" id="departmentId">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <strong>Department:</strong> <span id="deptName"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Faculty Member <span class="text-danger">*</span></label>
+                        <input type="text" id="horSearch" class="form-control mb-2" placeholder="🔍 Search by name...">
+                        <select class="form-select" id="horSelect" name="faculty_id" required size="8" style="height: auto; min-height: 250px;">
+                            <option value="">-- Select Faculty --</option>
+                        </select>
+                        <small class="text-muted mt-2 d-block">You can change or remove the Head of Research at any time.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Confirm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+#horSelect option {
+    padding: 8px;
+    cursor: pointer;
+}
+
+#horSelect option:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+#horSearch {
+    border: 2px solid #0d6efd;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let facultyData = {};
+
+// Load faculty for department
+function loadFaculty(deptId) {
+    fetch(`/api/department-faculty/${deptId}`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('horSelect');
+            select.innerHTML = '<option value="">-- Select Faculty --</option>';
+            
+            facultyData = {};
+            data.faculty.forEach(f => {
+                const option = document.createElement('option');
+                option.value = f.id;
+                option.textContent = f.name + ' (' + f.email + ')';
+                option.setAttribute('data-name', f.name.toLowerCase());
+                facultyData[f.id] = f;
+                select.appendChild(option);
+            });
+        });
+}
+
+// Appoint HoR
+function appointHoR(deptId, deptName) {
+    document.getElementById('modalTitle').textContent = 'Appoint';
+    document.getElementById('formAction').value = 'appoint';
+    document.getElementById('departmentId').value = deptId;
+    document.getElementById('deptName').textContent = deptName;
+    document.getElementById('horSearch').value = '';
+    
+    loadFaculty(deptId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('horModal'));
+    modal.show();
+}
+
+// Change HoR
+function changeHoR(deptId, deptName) {
+    document.getElementById('modalTitle').textContent = 'Change';
+    document.getElementById('formAction').value = 'change';
+    document.getElementById('departmentId').value = deptId;
+    document.getElementById('deptName').textContent = deptName;
+    document.getElementById('horSearch').value = '';
+    
+    loadFaculty(deptId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('horModal'));
+    modal.show();
+}
+
+// Remove HoR
+function removeHoR(deptId, deptName) {
+    if (confirm(`Remove Head of Research from ${deptName}?\n\nThe faculty member will lose HoR access immediately.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/head-of-research/manage';
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'remove';
+        
+        const deptInput = document.createElement('input');
+        deptInput.type = 'hidden';
+        deptInput.name = 'department_id';
+        deptInput.value = deptId;
+        
+        form.appendChild(actionInput);
+        form.appendChild(deptInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('horSearch');
+    const horSelect = document.getElementById('horSelect');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const options = horSelect.querySelectorAll('option');
+        
+        options.forEach(option => {
+            if (option.value === '') {
+                option.style.display = '';
+                return;
+            }
+            
+            const name = option.getAttribute('data-name') || '';
+            
+            if (name.includes(searchTerm)) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ Management - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .faq-card {
+        background: white;
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: all 0.3s;
+    }
+    
+    .faq-card:hover {
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .cat-general { background: #e3f2fd; color: #1976d2; }
+    .cat-publications { background: #f3e5f5; color: #7b1fa2; }
+    .cat-wallet { background: #fff3e0; color: #e65100; }
+    .cat-applications { background: #e8f5e9; color: #2e7d32; }
+    .cat-technical { background: #fce4ec; color: #c2185b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="bi bi-question-circle"></i> FAQ Management</h2>
+                <p class="text-muted">Manage frequently asked questions for users</p>
+            </div>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Add FAQ Button -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFAQModal">
+                <i class="bi bi-plus-circle"></i> Add New FAQ
+            </button>
+            <a href="{{ url_for('faq') }}" class="btn btn-info" target="_blank">
+                <i class="bi bi-eye"></i> Preview FAQ Page
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5>Total FAQs</h5>
+                    <h2>{{ faqs|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Active</h5>
+                    <h2>{{ faqs|selectattr('is_active')|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5>Categories</h5>
+                    <h2>{{ faqs|map(attribute='category')|unique|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Total Views</h5>
+                    <h2>{{ faqs|sum(attribute='view_count') }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ List -->
+    <div class="row">
+        <div class="col-12">
+            {% if faqs %}
+                {% for faq in faqs %}
+                <div class="faq-card {% if not faq.is_active %}opacity-50{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <span class="category-badge cat-{{ faq.category|lower }}">
+                                {{ faq.category }}
+                            </span>
+                            {% if not faq.is_active %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                            <h5 class="mt-2 mb-2">{{ faq.question }}</h5>
+                            <p class="text-muted mb-2">{{ faq.answer }}</p>
+                            <small class="text-muted">
+                                <i class="bi bi-eye"></i> {{ faq.view_count }} views • 
+                                Order: {{ faq.display_order }} •
+                                Created: {{ faq.created_at.strftime('%Y-%m-%d') }}
+                            </small>
+                        </div>
+                        <div class="ms-3">
+                            <button class="btn btn-sm btn-warning mb-1" data-bs-toggle="modal" 
+                                    data-bs-target="#editFAQModal{{ faq.id }}">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <form method="POST" action="{{ url_for('admin_faq_delete', faq_id=faq.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Delete this FAQ?')">
+                                <button type="submit" class="btn btn-sm btn-danger mb-1">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit FAQ Modal -->
+                <div class="modal fade" id="editFAQModal{{ faq.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit FAQ</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST" action="{{ url_for('admin_faq_edit', faq_id=faq.id) }}">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Category</label>
+                                        <select class="form-select" name="category" required>
+                                            <option value="General" {% if faq.category == 'General' %}selected{% endif %}>General</option>
+                                            <option value="Publications" {% if faq.category == 'Publications' %}selected{% endif %}>Publications</option>
+                                            <option value="Wallet" {% if faq.category == 'Wallet' %}selected{% endif %}>Wallet & Incentives</option>
+                                            <option value="Applications" {% if faq.category == 'Applications' %}selected{% endif %}>Applications</option>
+                                            <option value="Technical" {% if faq.category == 'Technical' %}selected{% endif %}>Technical Issues</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Question</label>
+                                        <textarea class="form-control" name="question" rows="2" required>{{ faq.question }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Answer</label>
+                                        <textarea class="form-control" name="answer" rows="5" required>{{ faq.answer }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Display Order (lower numbers appear first)</label>
+                                        <input type="number" class="form-control" name="display_order" 
+                                               value="{{ faq.display_order }}" min="0" max="999">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Update FAQ</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No FAQs created yet. Click "Add New FAQ" to get started.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add FAQ Modal -->
+<div class="modal fade" id="addFAQModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New FAQ</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin_faq_add') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="General">General</option>
+                            <option value="Publications">Publications</option>
+                            <option value="Wallet">Wallet & Incentives</option>
+                            <option value="Applications">Applications</option>
+                            <option value="Technical">Technical Issues</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Question</label>
+                        <textarea class="form-control" name="question" rows="2" 
+                                  placeholder="Enter the question..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Answer</label>
+                        <textarea class="form-control" name="answer" rows="5" 
+                                  placeholder="Enter the answer..." required></textarea>
+                        <small class="text-muted">You can use HTML tags for formatting</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Display Order (lower numbers appear first)</label>
+                        <input type="number" class="form-control" name="display_order" 
+                               value="0" min="0" max="999">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add FAQ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

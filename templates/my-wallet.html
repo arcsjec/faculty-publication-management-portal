@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}My Wallet - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-wallet2"></i> My Wallet</h2>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Applications
+                </a>
+            </div>
+
+            <div class="card shadow-sm mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="text-white-50 mb-1">Total Available Funds</h6>
+                            <h1 class="display-4 mb-0">₹ {{ total_available|indian_format }}</h1>
+                            <small class="text-white-50">RRF: ₹{{ rrf_balance|indian_format }} | EPP: {{ "%.1f"|format(epp_balance) }} pts (₹{{ epp_inr_value|indian_format }})</small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <small class="text-white-50">RRF Received</small>
+                                <h5 class="mb-0">₹ {{ total_rrf_received|indian_format }}</h5>
+                            </div>
+                            <div>
+                                <small class="text-white-50">RRF Spent</small>
+                                <h5 class="mb-0">₹ {{ total_rrf_spent|indian_format }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-arrow-down-circle text-success fs-1"></i>
+                            <h3 class="mt-2 mb-0 text-success">₹{{ total_rrf_received|indian_format }}</h3>
+                            <p class="text-muted mb-1 fw-bold">Total Credits (Rs)</p>
+                            <small class="text-muted">{{ transactions|selectattr('transaction_type', 'equalto', 'credit')|list|length }} transactions</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-danger">
+                        <div class="card-body text-center">
+                            <i class="bi bi-arrow-up-circle text-danger fs-1"></i>
+                            <h3 class="mt-2 mb-0 text-danger">₹{{ total_rrf_spent|indian_format }}</h3>
+                            <p class="text-muted mb-1 fw-bold">Total Debits (Rs)</p>
+                            <small class="text-muted">{{ transactions|selectattr('transaction_type', 'equalto', 'debit')|list|length }} transactions</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-warning">
+                        <div class="card-body text-center">
+                            <i class="bi bi-star-fill text-warning fs-1"></i>
+                            <h3 class="mt-2 mb-0 text-warning">{{ "%.1f"|format(total_epp_earned) }}</h3>
+                            <p class="text-muted mb-1 fw-bold">EPP Earned (Points)</p>
+                            <small class="text-muted">Worth ₹{{ (total_epp_earned * epp_to_inr)|indian_format }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-info">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calculator text-info fs-1"></i>
+                            <h3 class="mt-2 mb-0 text-info">1 EPP</h3>
+                            <p class="text-muted mb-1 fw-bold">EPP Conversion Rate</p>
+                            <small class="text-muted">= ₹{{ epp_to_inr|indian_format }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-3" id="walletTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="transactions-tab" data-bs-toggle="tab"
+                            data-bs-target="#transactions" type="button" role="tab">
+                        <i class="bi bi-list-ul"></i> Transactions
+                        <span class="badge bg-secondary ms-1">{{ transactions|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="applications-tab" data-bs-toggle="tab"
+                            data-bs-target="#applications" type="button" role="tab">
+                        <i class="bi bi-check-circle"></i> Approved Apps
+                        <span class="badge bg-success ms-1">{{ approved_applications|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="epp-tab" data-bs-toggle="tab"
+                            data-bs-target="#epp" type="button" role="tab">
+                        <i class="bi bi-star-fill"></i> EPP Earnings
+                        <span class="badge bg-warning text-dark ms-1">{{ epp_earning_apps|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="info-tab" data-bs-toggle="tab"
+                            data-bs-target="#info" type="button" role="tab">
+                        <i class="bi bi-info-circle"></i> Info
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="walletTabsContent">
+                <div class="tab-pane fade show active" id="transactions" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-sjec-navy text-white">
+                            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Transaction History</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if transactions %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Type</th>
+                                            <th>Amount</th>
+                                            <th>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for txn in transactions %}
+                                        <tr>
+                                            <td>{{ txn.created_at.strftime('%d %b %Y') }}</td>
+                                            <td>
+                                                {{ txn.description }}
+                                                {% if txn.application %}
+                                                <br><small><a href="{{ url_for('view_application', app_id=txn.application.id) }}">{{ txn.application.tracking_id }}</a></small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if txn.transaction_type == 'credit' %}
+                                                <span class="badge bg-success"><i class="bi bi-arrow-down"></i> Credit</span>
+                                                {% else %}
+                                                <span class="badge bg-danger"><i class="bi bi-arrow-up"></i> Debit</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                            {% if txn.transaction_type == 'credit' %}
+                                                <span class="text-success fw-bold">+ ₹{{ txn.amount|indian_format }}</span>
+                                            {% else %}
+                                                <span class="text-danger fw-bold">- ₹{{ txn.amount|indian_format }}</span>
+                                            {% endif %}
+                                            </td>
+                                            <td>₹{{ txn.balance_after|indian_format }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <h5>No Transactions Yet</h5>
+                                <p class="mb-0">Your transaction history will appear here.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="applications" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="bi bi-check-circle"></i> Approved Applications</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if approved_applications %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Tracking ID</th>
+                                            <th>Type</th>
+                                            <th>Title</th>
+                                            <th>Approved</th>
+                                            <th>Amount</th>
+                                            <th>EPP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for app in approved_applications %}
+                                        <tr>
+                                            <td><a href="{{ url_for('view_application', app_id=app.id) }}">{{ app.tracking_id }}</a></td>
+                                            <td>
+                                                {% if app.application_type == 'conference_registration' %}
+                                                <span class="badge bg-primary">Conference</span>
+                                                {% elif app.application_type == 'publication_incentive' %}
+                                                <span class="badge bg-success">Incentive</span>
+                                                {% else %}
+                                                <span class="badge bg-info">Journal</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ app.title_of_paper[:40] }}...</td>
+                                            <td>{{ app.principal_approved_at.strftime('%d %b %Y') if app.principal_approved_at else '-' }}</td>
+                                            <td>₹{{ ((app.dean_first_author_amount or 0) + (app.dean_corresponding_author_amount or 0) + (app.dean_coauthor_amount or 0) + (app.dean_recommended_amount or 0))|int|indian_format }}</td>
+                                            <td>
+                                                {% if app.epp_awarded %}
+                                                <span class="badge bg-warning text-dark">{{ app.epp_awarded }} pts</span>
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <h5>No Approved Applications</h5>
+                                <p class="mb-0">Approved applications will appear here.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="epp" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0"><i class="bi bi-star-fill"></i> EPP Earnings</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if epp_earning_apps %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Journal</th>
+                                            <th>Quartile</th>
+                                            <th>Authorship</th>
+                                            <th>EPP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for app in epp_earning_apps %}
+                                        <tr>
+                                            <td>{{ app.title_of_paper[:50] }}...</td>
+                                            <td>{{ app.journal_name }}</td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if app.quartile == 'Q1' %}bg-success
+                                                    {% elif app.quartile == 'Q2' %}bg-primary
+                                                    {% elif app.quartile == 'Q3' %}bg-info
+                                                    {% else %}bg-warning text-dark{% endif %}">
+                                                    {{ app.quartile }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if app.is_first_author %}<span class="badge bg-success">FA</span>{% endif %}
+                                                {% if app.is_corresponding_author %}<span class="badge bg-primary">CA</span>{% endif %}
+                                            </td>
+                                            <td><strong class="text-warning">{{ app.epp_awarded }} pts</strong></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <h5>No EPP Earned</h5>
+                                <p class="mb-0">EPP is awarded for approved publications.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="info" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="bi bi-info-circle"></i> Wallet Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <h5>Research Reserve Fund (RRF)</h5>
+                            <p>Annual allocation of ₹{{ (config.annual_rrf_amount if config else 10000)|int|indian_format }}. Used for conferences, journals, and publication incentives.</p>
+                            
+                            <h5 class="mt-3">Earned Publication Points (EPP)</h5>
+                            <p>Earned through publications. 1 EPP = ₹{{ (config.epp_to_inr_rate if config else 2000)|int }}.</p>
+                            
+                            <table class="table table-sm table-bordered mt-3">
+                                <thead>
+                                    <tr><th>Quartile</th><th>FA</th><th>CA</th><th>FA+CA</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><span class="badge bg-success">Q1</span></td><td>5</td><td>5</td><td>10</td></tr>
+                                    <tr><td><span class="badge bg-primary">Q2</span></td><td>4</td><td>4</td><td>8</td></tr>
+                                    <tr><td><span class="badge bg-info">Q3</span></td><td>3</td><td>3</td><td>6</td></tr>
+                                    <tr><td><span class="badge bg-warning">Q4</span></td><td>2</td><td>2</td><td>4</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-light mt-4">
+                <h6><i class="bi bi-info-circle"></i> About Your Wallet</h6>
+                <ul class="mb-0">
+                    <li>RRF is credited annually by the Dean</li>
+                    <li>Applications are automatically debited when approved</li>
+                    <li>EPP is awarded for approved publications</li>
+                    <li>Contact Dean's office for queries</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+            <p class="text-muted">System overview and management</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-people"></i> Total Users</h5>
+                    <h2>{{ total_users }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-file-earmark-text"></i> Publications</h5>
+                    <h2>{{ total_publications }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-building"></i> Departments</h5>
+                    <h2>{{ total_departments }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bell"></i> Notifications</h5>
+                    <h2>{{ pending_notifications }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ url_for('view_circulars') }}" class="btn btn-danger position-relative">
+                            <i class="bi bi-megaphone"></i> Circulars
+                            {% if unread_circulars is defined and unread_circulars > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark">
+                                {{ unread_circulars }}
+                                <span class="visually-hidden">unread circulars</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('admin_departments') }}" class="btn btn-success">
+                            <i class="bi bi-building"></i> Manage Departments
+                        </a>
+                        <a href="{{ url_for('admin_publications') }}" class="btn btn-danger">
+                            <i class="bi bi-journals"></i> Manage Publications
+                        </a>
+                        <a href="{{ url_for('admin_edit_requests') }}" class="btn btn-warning position-relative">
+                            <i class="bi bi-shield-exclamation"></i> Second Edit Requests
+                            {% if pending_second_edits > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ pending_second_edits }}
+                                <span class="visually-hidden">pending requests</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('admin_audit_logs') }}" class="btn btn-info">
+                            <i class="bi bi-clock-history"></i> View Audit Logs
+                        </a>
+                        <a href="{{ url_for('statistics') }}" class="btn btn-success">
+                            <i class="bi bi-graph-up"></i> View Statistics
+                        </a>
+                        <a href="{{ url_for('admin_bulk_import_users') }}" class="btn btn-secondary">
+                            <i class="bi bi-people-fill"></i> Bulk Import Users
+                        </a>
+                        <a href="{{ url_for('admin_bulk_import') }}" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Bulk Import Publications
+                        </a>
+                        <a href="{{ url_for('admin_email_settings') }}" class="btn btn-warning">
+                            <i class="bi bi-envelope-at-fill"></i> Email Settings
+                        </a>
+                        <a href="{{ url_for('admin_database_management') }}" class="btn btn-success">
+                            <i class="bi bi-database"></i> Database Management
+                        </a>
+                        <a href="{{ url_for('admin_faq_management') }}" class="btn btn-info">
+                            <i class="bi bi-question-circle"></i> FAQ Management
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Users -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Recent Users</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>{{ user.name }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if user.role == 'admin' %}bg-danger
+                                            {% elif user.role == 'principal' %}bg-primary
+                                            {% elif user.role == 'hod' %}bg-info
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ user.role|upper }}
+                                        </span>
+                                    </td>
+                                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-outline-primary">View All Users</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Audit Logs -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>User</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ log.action }}</span>
+                                    </td>
+                                    <td>
+                                        {% if log.user %}
+                                            {{ log.user.name }}
+                                        {% else %}
+                                            System
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ (log.created_at|to_ist).strftime('%Y-%m-%d %I:%M %p') }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{{ url_for('admin_audit_logs') }}" class="btn btn-sm btn-outline-info">View All Logs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh for second edit requests and notifications
+setInterval(function() {
+    // Check for pending second edit requests
+    fetch('/api/check_edit_requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.pending_count !== undefined) {
+                // Update badge on Second Edit Requests button
+                const badge = document.querySelector('.btn-warning .badge');
+                if (data.pending_count > 0) {
+                    if (badge) {
+                        badge.textContent = data.pending_count;
+                    } else {
+                        // Reload if new requests appeared
+                        location.reload();
+                    }
+                } else if (badge && data.pending_count === 0) {
+                    // Reload if all requests cleared
+                    location.reload();
+                }
+            }
+        })
+        .catch(error => console.error('Error checking edit requests:', error));
+    
+    // Check for new notifications
+    fetch('/api/check_notifications')
+        .then(response => response.json())
+        .then(data => {
+            if (data.unread_count > 0) {
+                // Update notification badge if exists
+                const notifBadge = document.querySelector('.bg-warning h2');
+                if (notifBadge && parseInt(notifBadge.textContent) !== data.unread_count) {
+                    notifBadge.textContent = data.unread_count;
+                }
+            }
+        })
+        .catch(error => console.error('Error checking notifications:', error));
+}, 30000); // Check every 30 seconds
+</script>
+{% endblock %}

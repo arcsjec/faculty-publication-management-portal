@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Annual RRF Dispersal - Dean Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-wallet2"></i> Annual Research Reserve Fund (RRF) Dispersal</h2>
+            <p class="text-muted">Annually credit RRF amount to all faculty wallets</p>
+        </div>
+    </div>
+
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> <strong>Important:</strong>
+        <ul class="mb-0">
+            <li>This will <strong>ADD</strong> to existing faculty wallet balances (not reset them)</li>
+            <li>All {{ faculties|length }} faculty members will receive the same amount</li>
+            <li>Faculty will be notified via email and notification</li>
+            <li>This action is logged in the audit trail</li>
+        </ul>
+    </div>
+
+    <!-- Dispersal Form -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Configure Dispersal Amount</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="dispersalForm">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Amount to Disperse per Faculty (Rs)</label>
+                            <input type="number" 
+                                   class="form-control form-control-lg" 
+                                   name="dispersal_amount" 
+                                   id="dispersal_amount"
+                                   value="{{ default_amount }}" 
+                                   step="100" 
+                                   min="100"
+                                   required>
+                            <small class="text-muted">Default: Rs {{ default_amount|int }} (from incentive config)</small>
+                        </div>
+
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="fw-bold">Dispersal Summary:</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3 bg-white rounded">
+                                            <h3 class="text-primary mb-0">{{ faculties|length }}</h3>
+                                            <small class="text-muted">Faculty Members</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3 bg-white rounded">
+                                            <h3 class="text-success mb-0" id="amount_display">Rs {{ default_amount|int }}</h3>
+                                            <small class="text-muted">Per Faculty</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3 bg-white rounded">
+                                            <h3 class="text-danger mb-0" id="total_display">Rs {{ total_if_dispersed|int }}</h3>
+                                            <small class="text-muted">Total Amount</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" name="confirm" id="confirm" required>
+                            <label class="form-check-label fw-bold" for="confirm">
+                                I confirm that I want to disperse Rs <span id="confirm_amount">{{ default_amount|int }}</span> to each of the {{ faculties|length }} faculty members.
+                                Total amount: Rs <span id="confirm_total">{{ total_if_dispersed|int }}</span>
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('dean_review_applications') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg" id="disperseBtn">
+                                <i class="bi bi-send-check"></i> Disperse Funds to All Faculty
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faculty List with Current Balances -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Faculty Wallet Status ({{ faculties|length }} members)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Department</th>
+                                    <th class="text-end">Current RRF Balance</th>
+                                    <th class="text-end">EPP Balance</th>
+                                    <th class="text-end">EPP Value (Rs)</th>
+                                    <th class="text-end">Total Available</th>
+                                    <th class="text-end">After Dispersal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for faculty in faculties %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ faculty.name }}</td>
+                                    <td><small>{{ faculty.email }}</small></td>
+                                    <td>{{ faculty.department.code if faculty.department else 'N/A' }}</td>
+                                    <td class="text-end">
+                                        <strong>₹ {{ (faculty.wallet_balance or 0)|int|indian_format }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        {{ (faculty.epp_balance or 0)|round(1) }} EPP
+                                    </td>
+                                    <td class="text-end">
+                                        ₹ {{ ((faculty.epp_balance or 0) * 2000)|int|indian_format }}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-info">
+                                            ₹ {{ ((faculty.wallet_balance or 0) + ((faculty.epp_balance or 0) * 2000))|int|indian_format }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-success new-balance" data-epp-value="{{ ((faculty.epp_balance or 0) * 2000)|int }}">
+                                            ₹ {{ (default_amount + ((faculty.epp_balance or 0) * 2000))|int|indian_format }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light fw-bold">
+                                    <td colspan="4">TOTAL</td>
+                                    <td class="text-end">₹ {{ faculties|sum(attribute='wallet_balance')|int|indian_format }}</td>
+                                    <td class="text-end">{{ faculties|sum(attribute='epp_balance')|round(1) }} EPP</td>
+                                    <td class="text-end">₹ {{ (faculties|sum(attribute='epp_balance') * 2000)|int|indian_format }}</td>
+                                    <td class="text-end">
+                                        <span class="badge bg-info">
+                                            ₹ {{ ((faculties|sum(attribute='wallet_balance')) + (faculties|sum(attribute='epp_balance') * 2000))|int|indian_format }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-success" id="total_after">
+                                            ₹ {{ (total_if_dispersed + (faculties|sum(attribute='epp_balance') * 2000))|int|indian_format }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Update displays when amount changes
+document.getElementById('dispersal_amount').addEventListener('input', function() {
+    const amount = parseFloat(this.value) || 0;
+    const facultyCount = {{ faculties|length }};
+    const total = amount * facultyCount;
+    
+    // Update summary displays
+    document.getElementById('amount_display').textContent = 'Rs ' + amount.toFixed(0);
+    document.getElementById('total_display').textContent = 'Rs ' + total.toFixed(0);
+    document.getElementById('confirm_amount').textContent = amount.toFixed(0);
+    document.getElementById('confirm_total').textContent = total.toFixed(0);
+    
+    // Update "After Dispersal" column (dispersal amount + EPP value)
+    document.querySelectorAll('.new-balance').forEach(function(elem) {
+        const eppValue = parseFloat(elem.dataset.eppValue) || 0;
+        const newTotal = amount + eppValue;
+        elem.textContent = '₹ ' + newTotal.toLocaleString('en-IN');
+    });
+    
+    // Update total after dispersal
+    const currentTotal = {{ faculties|sum(attribute='wallet_balance')|int }};
+    const newTotalRRF = currentTotal + total;
+    document.getElementById('total_after').textContent = 'Rs ' + newTotalRRF.toFixed(0);
+});
+
+// Confirm before submit
+document.getElementById('dispersalForm').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('dispersal_amount').value) || 0;
+    const total = amount * {{ faculties|length }};
+    
+    if (!confirm(`Are you absolutely sure you want to disperse Rs ${amount.toFixed(0)} to each faculty member?\n\nTotal amount: Rs ${total.toFixed(0)}\n\nThis action cannot be undone.`)) {
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+{% endblock %}

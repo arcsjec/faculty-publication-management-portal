@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <h2 class="mb-4"><i class="bi bi-person-circle"></i> My Profile</h2>
+        
+        <div class="row">
+            <!-- Left Column - Profile Info & Media -->
+            <div class="col-md-8">
+                <!-- Profile Information Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-sjec-navy text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Profile Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <input type="hidden" name="action" value="update_name">
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label">Name:</label>
+                                <div class="col-sm-7">
+                                    <input type="text" class="form-control" name="name" value="{{ current_user.name }}" required>
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-save"></i> Update
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">Email:</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" value="{{ current_user.email }}" readonly>
+                                <small class="text-muted">Email cannot be changed</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label class="col-sm-3 col-form-label">Role:</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" value="{{ current_user.role|title }}" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <label class="col-sm-3 col-form-label">Department:</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" 
+                                       value="{% if current_user.department %}{{ current_user.department.name }}{% else %}N/A{% endif %}" 
+                                       readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Change Password Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="bi bi-key"></i> Change Password</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" id="changePasswordForm">
+                            <input type="hidden" name="action" value="change_password">
+                            
+                            <div class="mb-3">
+                                <label for="old_password" class="form-label">Current Password:</label>
+                                <input type="password" class="form-control" id="old_password" 
+                                       name="old_password" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password:</label>
+                                <input type="password" class="form-control" id="new_password" 
+                                       name="new_password" minlength="6" required>
+                                <small class="text-muted">Minimum 6 characters</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password:</label>
+                                <input type="password" class="form-control" id="confirm_password" 
+                                       name="confirm_password" minlength="6" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-key"></i> Change Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Profile Picture & Signature -->
+            <div class="col-md-4">
+                <!-- Profile Picture Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-image"></i> Profile Picture</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            {% if current_user.profile_picture %}
+                                <img src="{{ url_for('user_profile_picture', user_id=current_user.id) }}" 
+                                     class="img-fluid rounded-circle border border-3 border-primary" 
+                                     style="max-width: 200px; max-height: 200px; object-fit: cover; object-position: top;"
+                                     alt="Profile Picture">
+                            {% else %}
+                                <div class="d-flex justify-content-center">
+                                    <svg width="200" height="200" class="rounded-circle border border-3 border-secondary">
+                                        <rect width="200" height="200" fill="#e9ecef"/>
+                                        <circle cx="100" cy="75" r="35" fill="#6c757d"/>
+                                        <ellipse cx="100" cy="160" rx="55" ry="50" fill="#6c757d"/>
+                                        <text x="100" y="185" font-size="14" text-anchor="middle" fill="#fff">No Photo</text>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data" id="profilePictureForm">
+                            <input type="hidden" name="action" value="upload_profile_picture">
+                            <div class="mb-3">
+                                <input type="file" class="form-control form-control-sm" 
+                                       name="profile_picture" id="profile_picture" 
+                                       accept="image/*" required>
+                                <small class="text-muted">JPG, JPEG, PNG, GIF (Max 25MB)</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <i class="bi bi-upload"></i> 
+                                {% if current_user.profile_picture %}Update{% else %}Upload{% endif %} Picture
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Digital Signature Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-pen"></i> Digital Signature</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            {% if current_user.signature %}
+                                <img src="{{ url_for('user_signature', user_id=current_user.id) }}" 
+                                     class="img-fluid" 
+                                     style="max-width: 100%; max-height: 150px; border: 1px solid #ddd; padding: 10px; background: white;"
+                                     alt="Digital Signature">
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> No signature uploaded
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data" id="signatureForm">
+                            <input type="hidden" name="action" value="upload_signature">
+                            <div class="mb-3">
+                                <input type="file" class="form-control form-control-sm" 
+                                       name="signature" id="signature" 
+                                       accept="image/*" required>
+                                <small class="text-muted">JPG, JPEG, PNG, GIF (Max 25MB)</small>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-sm w-100">
+                                <i class="bi bi-upload"></i> 
+                                {% if current_user.signature %}Update{% else %}Upload{% endif %} Signature
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('New passwords do not match!');
+        return false;
+    }
+});
+
+// Preview image before upload
+document.getElementById('profile_picture').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.size > 26214400) {
+        alert('File size must be less than 25MB');
+        this.value = '';
+    }
+});
+
+document.getElementById('signature').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.size > 26214400) {
+        alert('File size must be less than 25MB');
+        this.value = '';
+    }
+});
+</script>
+{% endblock %}

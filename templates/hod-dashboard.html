@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}HoD Dashboard - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-speedometer2"></i> Department Publications</h2>
+            <div class="btn-group">
+                <a href="{{ url_for('export_excel', year=selected_year, month=selected_month) }}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Export Excel
+                </a>
+                <a href="{{ url_for('export_bibtex', year=selected_year, month=selected_month) }}" class="btn btn-info">
+                    <i class="bi bi-file-earmark-code"></i> Export BibTeX
+                </a>
+            </div>
+        </div>
+        
+        <!-- Quick Actions Section -->
+        <div class="card shadow-sm mb-4" style="border: none;">
+            <div class="card-header text-white" style="background-color: #0a1f44; border-radius: 8px 8px 0 0;">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('hod_review_applications') }}" class="btn w-100 py-3 text-white position-relative" style="background-color: #dc3545; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-clipboard-check fs-4"></i><br>
+                            <span class="mt-2 d-block">Review Applications</span>
+                            {% if hod_pending_review is defined and hod_pending_review > 0 %}
+                            <span class="position-absolute top-0 end-0 m-2 badge rounded-pill bg-warning text-dark pulse">
+                                {{ hod_pending_review }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('view_users') }}" class="btn w-100 py-3 text-white" style="background-color: #0d6efd; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-people fs-4"></i><br>
+                            <span class="mt-2 d-block">View Users</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('statistics') }}" class="btn w-100 py-3 text-white" style="background-color: #198754; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-bar-chart fs-4"></i><br>
+                            <span class="mt-2 d-block">View Statistics</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('pending_edit_requests') }}" class="btn w-100 py-3 text-dark position-relative" style="background-color: #ffc107; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-pencil-square fs-4"></i><br>
+                            <span class="mt-2 d-block">Edit Requests</span>
+                            {% if pending_edit_requests is defined and pending_edit_requests > 0 %}
+                            <span class="position-absolute top-0 end-0 m-2 badge rounded-pill bg-danger text-white">
+                                {{ pending_edit_requests }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('view_circulars') }}" class="btn w-100 py-3 text-white position-relative" style="background-color: #dc3545; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-megaphone fs-4"></i><br>
+                            <span class="mt-2 d-block">Circulars</span>
+                            {% if unread_circulars is defined and unread_circulars > 0 %}
+                            <span class="position-absolute top-0 end-0 m-2 badge rounded-pill bg-warning text-dark">
+                                {{ unread_circulars }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin_bulk_import') }}" class="btn w-100 py-3 text-white" style="background-color: #6f42c1; border-radius: 8px; font-weight: 500;">
+                            <i class="bi bi-cloud-upload fs-4"></i><br>
+                            <span class="mt-2 d-block">Bulk Import</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filter Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('dashboard') }}">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Year</label>
+                            <select name="year" class="form-select">
+                                <option value="">All Years</option>
+                                {% for year in years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Month</label>
+                            <select name="month" class="form-select">
+                                <option value="">All Months</option>
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-sjec-navy w-100">
+                                <i class="bi bi-filter"></i> Apply Filter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="stat-box">
+                            <h3 class="text-sjec-navy">{{ all_publications|length }}</h3>
+                            <p class="text-muted">Total Publications</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-box">
+                            <h3 class="text-sjec-gold">{{ all_publications|selectattr('indexing_status', 'equalto', 'Scopus')|list|length }}</h3>
+                            <p class="text-muted">Scopus Indexed</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-box">
+                            <h3 class="text-sjec-navy">{{ all_publications|sum(attribute='citation_count') }}</h3>
+                            <p class="text-muted">Total Citations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Publications Table -->
+        {% if publications %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-sjec-navy text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-journals"></i> Publication List</h5>
+                    <input type="text" id="searchBox" class="form-control form-control-sm w-50" 
+                           placeholder="🔍 Search by title or author...">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="publicationsTable">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Authors</th>
+                                <th>Year</th>
+                                <th>Journal/Conference</th>
+                                <th>Indexing</th>
+                                <th>Citations</th>
+                                <th>Faculty</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pub in publications %}
+                            <tr data-title="{{ pub.title|lower }}" data-authors="{{ pub.authors_names|lower }}">
+                                <td>
+                                    <strong>{{ pub.title[:80] }}{% if pub.title|length > 80 %}...{% endif %}</strong>
+                                </td>
+                                <td>{{ pub.authors_names[:50] }}...</td>
+                                <td>{{ pub.year }}</td>
+                                <td>{{ pub.journal_conference_name[:30] if pub.journal_conference_name else 'N/A' }}</td>
+                                <td>
+                                    {% if pub.indexing_status %}
+                                        <span class="badge bg-success">{{ pub.indexing_status }}</span>
+                                    {% endif %}
+                                    {% if pub.quartile %}
+                                        <span class="badge bg-info">{{ pub.quartile }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pub.citation_count or 0 }}</td>
+                                <td><small>{{ pub.author.name }}</small></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('view_publication', id=pub.id) }}" class="btn btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if pub.status == 'confirmed' and not pub.can_edit %}
+                                        <form method="POST" action="{{ url_for('grant_edit_permission', id=pub.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-success" title="Grant Edit Permission">
+                                                <i class="bi bi-unlock"></i>
+                                            </button>
+                                        </form>
+                                        {% elif pub.status == 'confirmed' and pub.can_edit %}
+                                        <form method="POST" action="{{ url_for('revoke_edit_permission', id=pub.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-warning" title="Revoke Edit Permission">
+                                                <i class="bi bi-lock"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Controls -->
+                {% if pagination and pagination.pages > 1 %}
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} to 
+                        {{ [pagination.page * pagination.per_page, pagination.total]|min }} 
+                        of {{ pagination.total }} publications
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('dashboard', page=pagination.prev_num, department=selected_dept, year=selected_year, month=selected_month) if pagination.has_prev else '#' }}">
+                                    <i class="bi bi-chevron-left"></i> Prev
+                                </a>
+                            </li>
+                            
+                            {% for page_num in range(1, pagination.pages + 1) %}
+                                {% if page_num == pagination.page %}
+                                    <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                                {% elif page_num == 1 or page_num == pagination.pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+                                    <li class="page-item"><a class="page-link" href="{{ url_for('dashboard', page=page_num, department=selected_dept, year=selected_year, month=selected_month) }}">{{ page_num }}</a></li>
+                                {% elif page_num == pagination.page - 3 or page_num == pagination.page + 3 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('dashboard', page=pagination.next_num, department=selected_dept, year=selected_year, month=selected_month) if pagination.has_next else '#' }}">
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> No publications found for the selected filters.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality
+    const searchBox = document.getElementById('searchBox');
+    const table = document.getElementById('publicationsTable');
+    
+    console.log('HoD - Search box:', searchBox);
+    console.log('HoD - Table:', table);
+    
+    if (!searchBox || !table) {
+        console.log('No search box or table - probably no publications to display');
+        return;
+    }
+    
+    console.log('Search box and table found for HoD dashboard');
+    
+    searchBox.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        console.log('Searching for:', searchTerm);
+        
+        const tbody = table.querySelector('tbody');
+        if (!tbody) {
+            console.error('No tbody found in table');
+            return;
+        }
+        
+        const rows = tbody.querySelectorAll('tr');
+        console.log('Found rows:', rows.length);
+        
+        let visibleCount = 0;
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title') || '';
+            const authors = row.getAttribute('data-authors') || '';
+            
+            if (title.includes(searchTerm) || authors.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        console.log('Visible rows:', visibleCount);
+    });
+});
+</script>
+{% endblock %}

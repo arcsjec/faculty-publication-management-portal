@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Circulars - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-megaphone"></i> Circulars & Announcements</h2>
+            <p class="text-muted">Stay updated with the latest circulars and announcements</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if current_user.is_authenticated and current_user.role == 'dean' %}
+            <a href="{{ url_for('upload_circular') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Upload New Circular
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if circulars %}
+    <div class="row">
+        {% for circular in circulars %}
+        <div class="col-md-12 mb-3">
+            <div class="card shadow-sm hover-shadow">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-9">
+                            <h5 class="card-title mb-1">
+                                <a href="{{ url_for('view_circular_detail', circular_id=circular.id) }}" class="text-decoration-none text-dark">
+                                    <i class="bi bi-megaphone-fill text-primary"></i> {{ circular.title }}
+                                </a>
+                            </h5>
+                            <p class="text-muted mb-2"><strong>Subject:</strong> {{ circular.subject }}</p>
+                            <p class="card-text text-truncate mb-2">{{ circular.body[:150] }}{% if circular.body|length > 150 %}...{% endif %}</p>
+                            <small class="text-muted">
+                                <i class="bi bi-person"></i> {{ circular.uploader.name }} | 
+                                <i class="bi bi-calendar"></i> {{ circular.created_at.strftime('%d %b %Y, %I:%M %p') }}
+                                {% if circular.file_path %}
+                                | <i class="bi bi-paperclip"></i> Attachment
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <a href="{{ url_for('view_circular_detail', circular_id=circular.id) }}" class="btn btn-outline-primary btn-sm mb-2">
+                                <i class="bi bi-eye"></i> View Details
+                            </a>
+                            {% if circular.file_path %}
+                            <a href="{{ url_for('download_circular', circular_id=circular.id) }}" class="btn btn-outline-success btn-sm mb-2">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            {% endif %}
+                            {% if current_user.is_authenticated and current_user.role == 'dean' %}
+                            <form method="POST" action="{{ url_for('delete_circular', circular_id=circular.id) }}" class="d-inline" 
+                                  onsubmit="return confirm('Are you sure you want to remove this circular?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm mb-2">
+                                    <i class="bi bi-trash"></i> Remove
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle fs-3"></i>
+        <h5 class="mt-2">No Circulars Available</h5>
+        <p class="mb-0">There are no active circulars at the moment. Please check back later.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.hover-shadow {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.card-title a:hover {
+    color: #0d6efd !important;
+}
+</style>
+
+{% endblock %}

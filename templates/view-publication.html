@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}View Publication - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="mb-4 d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+            {% if publication.pdf_filename %}
+            <a href="{{ url_for('download_publication', id=publication.id) }}" class="btn btn-success btn-lg">
+                <i class="bi bi-download"></i> Download PDF
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-sjec-navy text-white">
+                <h4 class="mb-0"><i class="bi bi-journal-text"></i> Publication Details</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h3 class="text-sjec-navy mb-0">{{ publication.title }}</h3>
+                    {% if current_user.role in ['faculty', 'hod', 'principal'] %}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyTitle()" title="Copy Title">
+                        <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Authors:</strong><br>{{ publication.authors_names }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Year:</strong><br>{{ publication.year }}</p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Month:</strong><br>{{ publication.month if publication.month else 'N/A' }}</p>
+                    </div>
+                </div>
+                
+                {% if publication.abstract %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="text-sjec-navy mb-0">Abstract</h5>
+                        {% if current_user.role in ['faculty', 'hod', 'principal'] %}
+                        <button class="btn btn-sm btn-outline-secondary" onclick="copyAbstract()" title="Copy Abstract">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                        {% endif %}
+                    </div>
+                    <p class="text-justify" id="abstractText">{{ publication.abstract }}</p>
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <h5 class="text-sjec-navy mb-3">Publication Information</h5>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Journal/Conference:</strong><br>
+                        {{ publication.journal_conference_name or 'N/A' }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Publisher:</strong><br>
+                        {{ publication.publisher_name or 'N/A' }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Volume:</strong><br>
+                        {{ publication.volume or 'N/A' }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Issue:</strong><br>
+                        {{ publication.issue or 'N/A' }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Pages:</strong><br>
+                        {{ publication.pages or 'N/A' }}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>DOI:</strong><br>
+                        {% if publication.doi %}
+                            <a href="https://doi.org/{{ publication.doi }}" target="_blank">{{ publication.doi }}</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h5 class="text-sjec-navy mb-3">Indexing & Impact</h5>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <strong>Indexing Status:</strong><br>
+                        {% if publication.indexing_status %}
+                            <span class="badge bg-success">{{ publication.indexing_status }}</span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Quartile:</strong><br>
+                        {% if publication.quartile %}
+                            <span class="badge bg-info">{{ publication.quartile }}</span>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Impact Factor:</strong><br>
+                        {{ publication.impact_factor if publication.impact_factor else 'N/A' }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Citations:</strong><br>
+                        {{ publication.citation_count or 0 }}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Department:</strong><br>
+                        {{ publication.department.name }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Submitted By:</strong><br>
+                        {{ publication.author.name }}
+                    </div>
+                </div>
+                
+                {% if publication.bibtex_entry %}
+                <hr>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="text-sjec-navy mb-0">BibTeX Entry</h5>
+                        {% if current_user.role in ['faculty', 'hod', 'principal'] %}
+                        <button class="btn btn-sm btn-outline-secondary" onclick="copyBibtex()">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                        {% endif %}
+                    </div>
+                    <pre class="bg-light p-3 rounded"><code id="bibtexCode">{{ publication.bibtex_entry }}</code></pre>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-muted">
+                <small>
+                    Created: {{ publication.created_at.strftime('%B %d, %Y') }}
+                    {% if publication.updated_at != publication.created_at %}
+                    | Last Updated: {{ publication.updated_at.strftime('%B %d, %Y') }}
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Store publication data safely
+const publicationData = {
+    title: {{ publication.title|tojson|safe }},
+    abstract: {{ (publication.abstract or '')|tojson|safe }},
+    bibtex: {{ (publication.bibtex_entry or '')|tojson|safe }}
+};
+
+console.log('Publication data loaded:', publicationData);
+
+function copyTitle() {
+    console.log('Copying title:', publicationData.title);
+    if (!publicationData.title) {
+        alert('No title available to copy');
+        return;
+    }
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(publicationData.title).then(() => {
+            console.log('Title copied successfully');
+            showCopyNotification('Title copied to clipboard!');
+        }).catch(err => {
+            console.error('Clipboard error:', err);
+            fallbackCopy(publicationData.title, 'Title');
+        });
+    } else {
+        fallbackCopy(publicationData.title, 'Title');
+    }
+}
+
+function copyAbstract() {
+    const abstractElement = document.getElementById('abstractText');
+    const abstractText = abstractElement ? abstractElement.textContent.trim() : publicationData.abstract;
+    
+    console.log('Copying abstract:', abstractText);
+    if (!abstractText) {
+        alert('No abstract available to copy');
+        return;
+    }
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(abstractText).then(() => {
+            console.log('Abstract copied successfully');
+            showCopyNotification('Abstract copied to clipboard!');
+        }).catch(err => {
+            console.error('Clipboard error:', err);
+            fallbackCopy(abstractText, 'Abstract');
+        });
+    } else {
+        fallbackCopy(abstractText, 'Abstract');
+    }
+}
+
+function copyBibtex() {
+    const bibtexElement = document.getElementById('bibtexCode');
+    const bibtexText = bibtexElement ? bibtexElement.textContent.trim() : publicationData.bibtex;
+    
+    console.log('Copying BibTeX:', bibtexText);
+    if (!bibtexText) {
+        alert('No BibTeX entry available to copy');
+        return;
+    }
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(bibtexText).then(() => {
+            console.log('BibTeX copied successfully');
+            showCopyNotification('BibTeX entry copied to clipboard!');
+        }).catch(err => {
+            console.error('Clipboard error:', err);
+            fallbackCopy(bibtexText, 'BibTeX');
+        });
+    } else {
+        fallbackCopy(bibtexText, 'BibTeX');
+    }
+}
+
+function fallbackCopy(text, label) {
+    // Fallback method for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            console.log('Fallback copy successful');
+            showCopyNotification(label + ' copied to clipboard!');
+        } else {
+            alert('Failed to copy ' + label);
+        }
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        alert('Copy failed. Please manually select and copy the text.');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopyNotification(message) {
+    // Create a temporary notification
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+    notification.style.zIndex = '9999';
+    notification.innerHTML = '<i class="bi bi-check-circle"></i> ' + message;
+    document.body.appendChild(notification);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 2000);
+}
+</script>
+{% endblock %}

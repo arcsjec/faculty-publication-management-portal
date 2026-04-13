@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}Journal Publication Support Application - SJEC{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h4 class="mb-0"><i class="bi bi-journal-text"></i> Journal Publication Support Application</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_application', app_id=form_data.id) if edit_mode else url_for('apply_journal_support') }}" id="supportForm" enctype="multipart/form-data">
+                        
+                        <!-- Application Header -->
+                        <div class="alert alert-info">
+                            <strong>ASSESSMENT OF QUALITY – JOURNAL PUBLICATION SUPPORT</strong>
+                        </div>
+                        
+                        <!-- 1. Name of Applicant -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">1. Name of the Applicant:</label>
+                            <input type="text" class="form-control" value="{{ current_user.name }}" readonly>
+                            <small class="text-muted">Pre-filled from your profile</small>
+                        </div>
+                        
+                        <!-- 2. Title of Publication -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">2. Title of the Publication: <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="title_of_paper" rows="2" required>{{ form_data.title_of_paper if form_data else '' }}</textarea>
+                        </div>
+                        
+                        <!-- 3. Application For -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">3. Application for:</label>
+                            <input type="text" class="form-control" value="Journal Publication Support" readonly>
+                        </div>
+                        
+                        <!-- 4. Type of Publication -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">4. Type of Publication: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="type_of_publication" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="National" {% if form_data and form_data.type_of_publication == 'National' %}selected{% endif %}>National</option>
+                                <option value="International" {% if form_data and form_data.type_of_publication == 'International' %}selected{% endif %}>International</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 5. Type of Journal -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">5. Type of Journal: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="type_of_journal" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Peer-Reviewed" {% if form_data and form_data.type_of_journal == 'Peer-Reviewed' %}selected{% endif %}>Peer-Reviewed</option>
+                                <option value="Indexed" {% if form_data and form_data.type_of_journal == 'Indexed' %}selected{% endif %}>Indexed</option>
+                                <option value="Others" {% if form_data and form_data.type_of_journal == 'Others' %}selected{% endif %}>Others</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 6. Name of Journal -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">6. Name of the Journal: <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="journal_name" value="{{ form_data.journal_name if form_data else '' }}" required>
+                        </div>
+                        
+                        <!-- 7. Quartile -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">7. Quartile of the Journal (If any):</label>
+                            <select class="form-select" name="journal_quartile">
+                                <option value="">-- Select Quartile --</option>
+                                <option value="Q1" {% if form_data and form_data.journal_quartile == 'Q1' %}selected{% endif %}>Q1</option>
+                                <option value="Q2" {% if form_data and form_data.journal_quartile == 'Q2' %}selected{% endif %}>Q2</option>
+                                <option value="Q3" {% if form_data and form_data.journal_quartile == 'Q3' %}selected{% endif %}>Q3</option>
+                                <option value="Q4" {% if form_data and form_data.journal_quartile == 'Q4' %}selected{% endif %}>Q4</option>
+                                <option value="Non-Quartile" {% if form_data and form_data.journal_quartile == 'Non-Quartile' %}selected{% endif %}>Non-Quartile</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 8. Impact Factor -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">8. Impact Factor of the Journal (If any):</label>
+                            <input type="number" class="form-control" name="journal_impact_factor" step="0.001" min="0" value="{{ form_data.journal_impact_factor if form_data and form_data.journal_impact_factor else '' }}">
+                        </div>
+                        
+                        <!-- 9. Type of Indexing -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">9. Type of Indexing: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="indexing_type" required>
+                                <option value="">-- Select Indexing --</option>
+                                <option value="Scopus" {% if form_data and form_data.indexing_type == 'Scopus' %}selected{% endif %}>Scopus</option>
+                                <option value="Web of Science" {% if form_data and form_data.indexing_type == 'Web of Science' %}selected{% endif %}>Web of Science</option>
+                                <option value="Others" {% if form_data and form_data.indexing_type == 'Others' %}selected{% endif %}>Others</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 10. Publisher Details -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">10. Publisher Details: <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="publisher_details" rows="2" required>{{ form_data.publisher_details if form_data else '' }}</textarea>
+                        </div>
+                        
+                        <!-- 11. APC Fees -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">11. APC Fees (Article Processing Charges) in Rs: <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="apc_fees" step="0.01" min="0" value="{{ form_data.apc_fees if form_data and form_data.apc_fees else '' }}" placeholder="Enter APC fees amount" required>
+                            <small class="text-muted">Enter the Article Processing Charges (mandatory)</small>
+                        </div>
+                        
+                        <!-- 12. Expected Charges -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">12. Expected Charges in Rs: <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="expected_charges" step="0.01" min="0" value="{{ form_data.expected_charges if form_data and form_data.expected_charges else '' }}" placeholder="Enter expected charges" required>
+                            <small class="text-muted">Enter the total expected charges for the publication (mandatory)</small>
+                        </div>
+                        
+                        <!-- 13. Date of Publication -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">13. Expected Date of Publication:</label>
+                            <input type="date" class="form-control" name="publication_date" id="publication_date" value="{{ form_data.publication_date.strftime('%Y-%m-%d') if form_data and form_data.publication_date else '' }}" min="{{ now.strftime('%Y-%m-%d') }}">
+                            <small class="text-muted">Optional - Select a future date if known</small>
+                        </div>
+                        
+                        <!-- Supporting Documents -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">13. Supporting Documents: <span class="text-danger">*</span></label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p class="text-muted small mb-3">
+                                        <i class="bi bi-info-circle"></i> Upload supporting documents such as:
+                                        invoice/bill for APC charges, acceptance letter, journal details, proof of payment, etc.
+                                        <br><strong>Accepted formats:</strong> PDF, PNG, JPEG, Word (.docx)
+                                        <br><strong>Maximum file size:</strong> 5MB per file
+                                        <br><strong>Note:</strong> At least one document is required
+                                    </p>
+                                    
+                                    {% if edit_mode and form_data.documents %}
+                                    <div class="mb-3">
+                                        <h6 class="text-primary">Uploaded Documents:</h6>
+                                        <div class="list-group">
+                                            {% for doc in form_data.documents %}
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="bi bi-file-earmark-{{ 'pdf' if doc.file_type == 'pdf' else 'image' if doc.file_type in ['png', 'jpeg', 'jpg'] else 'word' }} text-primary"></i>
+                                                    <strong>{{ doc.filename }}</strong>
+                                                    <small class="text-muted">({{ (doc.file_size / 1024) | round(2) }} KB)</small>
+                                                    {% if doc.document_type %}
+                                                    <span class="badge bg-secondary">{{ doc.document_type }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('download_application_document', doc_id=doc.id) }}" class="btn btn-outline-primary" target="_blank">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger" onclick="deleteDocument({{ doc.id }})">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        <label for="documents" class="form-label">Upload New Documents:</label>
+                                        <input type="file" class="form-control" name="documents" id="documents" 
+                                               accept=".pdf,.png,.jpg,.jpeg,.docx" multiple {% if not edit_mode or not form_data.documents %}required{% endif %}>
+                                        <small class="text-muted">Hold Ctrl/Cmd to select multiple files</small>
+                                    </div>
+                                    
+                                    <div id="fileList" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 14. Signature Section -->
+                        <div class="mb-4 p-3 border rounded bg-light">
+                            <label class="form-label fw-bold">15. Signature of the Applicant:</label>
+                            <div class="d-flex align-items-center gap-3">
+                                {% if current_user.signature %}
+                                    <img src="{{ url_for('user_signature', user_id=current_user.id) }}" 
+                                         alt="Your Signature" 
+                                         style="max-width: 120px; max-height: 50px; background: white; padding: 3px;">
+                                    <div>
+                                        <p class="mb-0"><strong>Signature on file</strong></p>
+                                        <small class="text-muted">Will be automatically included in the form</small>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="bi bi-exclamation-triangle"></i> 
+                                        <strong>No signature uploaded!</strong> 
+                                        Please upload your signature in 
+                                        <a href="{{ url_for('profile') }}" target="_blank">My Profile</a> before submitting.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block mt-2">Date: <strong>{{ now.strftime('%d-%m-%Y') }}</strong> (Auto-filled)</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('my_applications') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <button type="submit" name="action" value="draft" class="btn btn-warning me-2">
+                                    <i class="bi bi-save"></i> Save as Draft
+                                </button>
+                                <button type="button" class="btn btn-info me-2" onclick="previewForm()">
+                                    <i class="bi bi-eye"></i> Preview
+                                </button>
+                                <button type="submit" name="action" value="submit" class="btn btn-success" {{ 'disabled' if not current_user.signature else '' }}>
+                                    <i class="bi bi-send"></i> Submit Application
+                                </button>
+                            </div>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-sjec-navy text-white">
+                <h5 class="modal-title"><i class="bi bi-printer"></i> Form Preview - Journal Publication Support</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent" style="padding: 40px;">
+                <!-- Preview will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printPreview()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewForm() {
+    const formData = {
+        applicant_name: "{{ current_user.name }}",
+        title_of_paper: document.querySelector('[name="title_of_paper"]').value,
+        type_of_publication: document.querySelector('[name="type_of_publication"]').value,
+        type_of_journal: document.querySelector('[name="type_of_journal"]').value,
+        journal_name: document.querySelector('[name="journal_name"]').value,
+        journal_quartile: document.querySelector('[name="journal_quartile"]').value,
+        journal_impact_factor: document.querySelector('[name="journal_impact_factor"]').value,
+        indexing_type: document.querySelector('[name="indexing_type"]').value,
+        publisher_details: document.querySelector('[name="publisher_details"]').value,
+        apc_fees: document.querySelector('[name="apc_fees"]').value,
+        expected_charges: document.querySelector('[name="expected_charges"]').value,
+        publication_date: document.querySelector('[name="publication_date"]').value,
+        date: "{{ now.strftime('%d-%m-%Y') }}",
+        has_signature: {{ 'true' if current_user.signature else 'false' }}
+    };
+    
+    const preview = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h5 style="text-align: center; font-weight: bold;">ASSESSMENT OF QUALITY – JOURNAL PUBLICATION SUPPORT</h5>
+            <hr>
+            
+            <p><strong>1. Name of the Applicant:</strong> ${formData.applicant_name}</p>
+            <p><strong>2. Title of the Publication:</strong><br>${formData.title_of_paper || '<em>Not filled</em>'}</p>
+            <p><strong>3. Application for:</strong> Journal Publication Support</p>
+            <p><strong>4. Type of Publication:</strong> ${formData.type_of_publication || '<em>Not selected</em>'}</p>
+            <p><strong>5. Type of Journal:</strong> ${formData.type_of_journal || '<em>Not selected</em>'}</p>
+            <p><strong>6. Name of the Journal:</strong> ${formData.journal_name || '<em>Not filled</em>'}</p>
+            <p><strong>7. Quartile of the Journal (If any):</strong> ${formData.journal_quartile || 'N/A'}</p>
+            <p><strong>8. Impact Factor of the Journal (If any):</strong> ${formData.journal_impact_factor || 'N/A'}</p>
+            <p><strong>9. Type of Indexing:</strong> ${formData.indexing_type || '<em>Not selected</em>'}</p>
+            <p><strong>10. Publisher Details:</strong><br>${formData.publisher_details || '<em>Not filled</em>'}</p>
+            <p><strong>11. APC Fees (Article Processing Charges):</strong> ${formData.apc_fees ? 'Rs ' + formData.apc_fees : 'N/A'}</p>
+            <p><strong>12. Expected Charges:</strong> ${formData.expected_charges ? 'Rs ' + formData.expected_charges : 'N/A'}</p>
+            <p><strong>13. Date of Publication:</strong> ${formData.publication_date || '<em>Not filled</em>'}</p>
+            
+            <div style="margin-top: 30px;">
+                <p><strong>14. Signature of the Applicant:</strong></p>
+                ${formData.has_signature ? 
+                    '<img src="{{ url_for("user_signature", user_id=current_user.id) }}" style="max-width: 120px; max-height: 50px; background: white; padding: 3px;">' : 
+                    '<em style="color: red;">No signature uploaded</em>'}
+                <p>Date: ${formData.date}</p>
+            </div>
+            
+            <hr style="margin-top: 40px;">
+            <h6><strong>Assessment Committee Proceedings</strong></h6>
+            <p>Journal Publication Support Applicable: <strong>___________</strong></p>
+            <p>Comments, if any: ______________________________________</p>
+            
+            <div style="margin-top: 30px;">
+                <p><strong>Signatures of Assessment Committee Members:</strong></p>
+                <p>____________________ (Name: ___________)</p>
+                <p>____________________ (Name: ___________)</p>
+                <p>____________________ (Name: ___________)</p>
+                <p>Date: ___________</p>
+            </div>
+            
+            <hr style="margin-top: 40px;">
+            <h6><strong>Dean of R&D Recommendation</strong></h6>
+            <p>Recommended Grant Amount for Journal Publication Support: Rs __________</p>
+            <p>Dean – R&D Signature: __________________</p>
+            
+            <hr style="margin-top: 40px;">
+            <h6><strong>Approval Section</strong></h6>
+            <p>Principal: ___________________</p>
+            <p>Director: ___________________</p>
+        </div>
+    `;
+    
+    document.getElementById('previewContent').innerHTML = preview;
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+function printPreview() {
+    const content = document.getElementById('previewContent').innerHTML;
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Journal Publication Support Application</title>
+            <style>
+                @page { size: A4; margin: 2cm; }
+                body { font-family: Arial, sans-serif; line-height: 1.6; }
+                @media print {
+                    body { margin: 0; }
+                }
+            </style>
+        </head>
+        <body>
+            ${content}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// File upload preview
+document.getElementById('documents')?.addEventListener('change', function(e) {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    
+    if (this.files.length > 0) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'alert alert-info';
+        listDiv.innerHTML = '<strong>Selected files:</strong><ul class="mb-0 mt-2">';
+        
+        Array.from(this.files).forEach(file => {
+            const fileSize = (file.size / 1024).toFixed(2);
+            const fileIcon = file.type.includes('pdf') ? 'file-earmark-pdf' : 
+                           file.type.includes('image') ? 'file-earmark-image' : 
+                           'file-earmark-word';
+            listDiv.innerHTML += `<li><i class="bi bi-${fileIcon}"></i> ${file.name} (${fileSize} KB)</li>`;
+        });
+        
+        listDiv.innerHTML += '</ul>';
+        fileList.appendChild(listDiv);
+    }
+});
+
+function deleteDocument(docId) {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    fetch(`/application/document/${docId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting document: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error deleting document');
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}

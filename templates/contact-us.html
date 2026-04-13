@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Contact Us - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4"><i class="bi bi-envelope-heart-fill text-sjec-navy"></i> Contact Us</h1>
+                <p class="lead text-muted">Get in touch with our team for support, feedback, or inquiries</p>
+            </div>
+
+            <!-- Developer Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h4 class="mb-0"><i class="bi bi-code-slash"></i> Developers</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Developer 1: Shalton Menezes -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center mb-3">
+                            <img id="shalton-img" 
+                                 alt="Shalton Menezes" 
+                                 class="rounded-circle" 
+                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #0a1f44;">
+                        </div>
+                        <div class="col-md-9">
+                            <h5 class="text-sjec-navy">Shalton Menezes</h5>
+                            <p class="text-muted mb-2"><strong>Department:</strong> Artificial Intelligence & Machine Learning</p>
+                            <p class="text-muted mb-2"><strong>Role:</strong> Full Stack Developer</p>
+                            <p class="text-muted mb-3"><strong>Institution:</strong> St Joseph Engineering College, Mangaluru</p>
+                            
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <a href="mailto:23g56.shalton@sjec.ac.in" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-envelope-fill"></i> 23g56.shalton@sjec.ac.in
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Developer 2: Luke Roman Noronha -->
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <img id="luke-img" 
+                                 alt="Luke Roman Noronha" 
+                                 class="rounded-circle" 
+                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #0a1f44;">
+                        </div>
+                        <div class="col-md-9">
+                            <h5 class="text-sjec-navy">Luke Roman Noronha</h5>
+                            <p class="text-muted mb-2"><strong>Department:</strong> Artificial Intelligence & Machine Learning</p>
+                            <p class="text-muted mb-2"><strong>Role:</strong> Full Stack Developer</p>
+                            <p class="text-muted mb-3"><strong>Institution:</strong> St Joseph Engineering College, Mangaluru</p>
+                            
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <a href="mailto:23g31.luke@sjec.ac.in" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-envelope-fill"></i> 23g31.luke@sjec.ac.in
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <strong>About the Portal:</strong> This Faculty Publication Portal is designed to streamline research publication management, 
+                        incentive applications, and administrative workflows at SJEC.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Support -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-headset"></i> Technical Support</h4>
+                </div>
+                <div class="card-body">
+                    <p>For technical issues, bug reports, or feature requests:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-envelope text-primary"></i>
+                            <strong>Email:</strong> <a href="mailto:testpublicationportal@gmail.com">testpublicationportal@gmail.com</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-chat-dots text-primary"></i>
+                            <strong>Feedback System:</strong> Use the floating feedback button (authenticated users only)
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-question-circle text-primary"></i>
+                            <strong>FAQ:</strong> Check the <a href="{{ url_for('faq') }}">Frequently Asked Questions</a> page
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-book text-primary"></i>
+                            <strong>User Guide:</strong> Visit the <a href="{{ url_for('user_guide') }}">User Guide</a> for detailed instructions
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Administrative Contact -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-building"></i> Administrative Contact</h4>
+                </div>
+                <div class="card-body">
+                    <p>For policy-related queries, publication approvals, or administrative matters:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-person-badge text-success"></i>
+                            <strong>System Admin:</strong> <a href="mailto:admin@sjec.ac.in">admin@sjec.ac.in</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-mortarboard text-success"></i>
+                            <strong>Dean R&D:</strong> Contact your department HoD for escalation
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-geo-alt text-success"></i>
+                            <strong>Address:</strong> St Joseph Engineering College, Vamanjoor, Mangaluru - 575028, Karnataka, India
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-telephone text-success"></i>
+                            <strong>Phone:</strong> +91-824-2263730
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-globe text-success"></i>
+                            <strong>Website:</strong> <a href="https://www.sjec.ac.in" target="_blank">www.sjec.ac.in</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0"><i class="bi bi-link-45deg"></i> Quick Links</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><a href="{{ url_for('faq') }}"><i class="bi bi-question-circle"></i> FAQ</a></li>
+                                <li><a href="{{ url_for('user_guide') }}"><i class="bi bi-book"></i> User Guide</a></li>
+                                <li><a href="{{ url_for('index') }}"><i class="bi bi-house"></i> Home</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                {% if current_user.is_authenticated %}
+                                <li><a href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                                <li><a href="{{ url_for('my_feedback') }}"><i class="bi bi-chat-left-text"></i> My Feedback</a></li>
+                                {% else %}
+                                <li><a href="{{ url_for('login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
+                                <li><a href="{{ url_for('register') }}"><i class="bi bi-person-plus"></i> Register</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Time Notice -->
+            <div class="alert alert-secondary text-center">
+                <i class="bi bi-clock-history"></i>
+                <strong>Response Time:</strong> We typically respond to queries within 24-48 hours during working days.
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Flexible image loader - tries multiple case and extension combinations
+function loadDeveloperImage(imgId, baseName) {
+    const img = document.getElementById(imgId);
+    const baseUrl = "{{ url_for('static', filename='images/developers/') }}";
+    const defaultImg = "{{ url_for('static', filename='images/default-avatar.png') }}";
+    
+    // Try different combinations: [name, extension]
+    const combinations = [
+        [baseName, 'png'],
+        [baseName, 'jpg'],
+        [baseName, 'jpeg'],
+        [baseName.toLowerCase(), 'png'],
+        [baseName.toLowerCase(), 'jpg'],
+        [baseName.toLowerCase(), 'jpeg'],
+        [baseName.toUpperCase(), 'png'],
+        [baseName.toUpperCase(), 'jpg'],
+        [baseName.toUpperCase(), 'jpeg']
+    ];
+    
+    let currentIndex = 0;
+    
+    function tryNext() {
+        if (currentIndex >= combinations.length) {
+            img.src = defaultImg;
+            return;
+        }
+        
+        const [name, ext] = combinations[currentIndex];
+        const testImg = new Image();
+        testImg.onload = function() {
+            img.src = baseUrl + name + '.' + ext;
+        };
+        testImg.onerror = function() {
+            currentIndex++;
+            tryNext();
+        };
+        testImg.src = baseUrl + name + '.' + ext;
+    }
+    
+    tryNext();
+}
+
+// Load images when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadDeveloperImage('shalton-img', 'Shalton');
+    loadDeveloperImage('luke-img', 'Luke');
+});
+</script>
+
+{% endblock %}

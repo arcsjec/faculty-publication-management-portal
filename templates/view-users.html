@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}View Users - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-people"></i> 
+            {% if current_user.role == 'hod' %}Department Users{% else %}All Users{% endif %}
+        </h2>
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-sjec-navy text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list"></i> User List
+                    <span class="badge bg-light text-dark float-end">{{ user_stats|length }} Users</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Filter Options -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Filter by Role:</label>
+                        <select id="roleFilter" class="form-select form-select-sm">
+                            <option value="">All Roles</option>
+                            <option value="Faculty">Faculty</option>
+                            <option value="HoD">HoD</option>
+                            <option value="Principal">Principal</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Filter by Department:</label>
+                        <select id="deptFilter" class="form-select form-select-sm">
+                            <option value="">All Departments</option>
+                            {% set departments = [] %}
+                            {% for stat in user_stats %}
+                                {% if stat.user.department and stat.user.department.name not in departments %}
+                                    {% set _ = departments.append(stat.user.department.name) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% for dept in departments|sort %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Search:</label>
+                        <input type="text" id="customSearch" class="form-control form-control-sm" placeholder="Search by name or email...">
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Department</th>
+                                <th>Publications</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in user_stats %}
+                            <tr data-role="{{ stat.user.role }}" data-dept="{{ stat.user.department.name if stat.user.department else 'N/A' }}">
+                                <td>
+                                    {% if stat.user.profile_picture %}
+                                        <img src="{{ url_for('user_profile_picture', user_id=stat.user.id) }}" 
+                                             class="rounded-circle" 
+                                             style="width: 40px; height: 40px; object-fit: cover; object-position: top;"
+                                             alt="{{ stat.user.name }}">
+                                    {% else %}
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                             style="width: 40px; height: 40px; background-color: #e9ecef; display: inline-flex;">
+                                            <i class="bi bi-person-circle" style="font-size: 1.5rem; color: #6c757d;"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ stat.user.name }}
+                                </td>
+                                <td>{{ stat.user.email }}</td>
+                                <td>
+                                    {% if stat.user.role == 'faculty' %}
+                                        <span class="badge bg-info">Faculty</span>
+                                    {% elif stat.user.role == 'hod' %}
+                                        <span class="badge bg-warning">HoD</span>
+                                    {% elif stat.user.role == 'principal' %}
+                                        <span class="badge bg-success">Principal</span>
+                                    {% elif stat.user.role == 'vice_principal' %}
+                                        <span class="badge bg-primary">Vice Principal</span>
+                                    {% elif stat.user.role == 'admin' %}
+                                        <span class="badge bg-danger">Admin</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if stat.user.department %}
+                                        {{ stat.user.department.name }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ stat.publication_count }}</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ stat.user.created_at.strftime('%b %d, %Y') }}
+                                    </small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (required for DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+// Initialize DataTable for better filtering and sorting
+$(document).ready(function() {
+    var table = $('#usersTable').DataTable({
+        order: [[1, 'asc']], // Sort by Name (ascending)
+        pageLength: 25,
+        columnDefs: [
+            { orderable: false, targets: 0 } // Disable sorting on Photo column
+        ],
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Quick search...",
+            lengthMenu: "Show _MENU_ users per page"
+        },
+        dom: 'lrtip' // Remove default search box, we'll use custom filters
+    });
+    
+    // Custom search
+    $('#customSearch').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+    
+    // Role filter
+    $('#roleFilter').on('change', function() {
+        var role = this.value;
+        if (role === '') {
+            table.column(2).search('').draw();
+        } else {
+            table.column(2).search(role).draw();
+        }
+    });
+    
+    // Department filter
+    $('#deptFilter').on('change', function() {
+        var dept = this.value;
+        if (dept === '') {
+            table.column(3).search('').draw();
+        } else {
+            table.column(3).search('^' + dept + '$', true, false).draw();
+        }
+    });
+});
+</script>
+{% endblock %}

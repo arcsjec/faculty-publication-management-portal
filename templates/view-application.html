@@ -1,0 +1,636 @@
+{% extends 'base.html' %}
+
+{% block title %}Application Details - {{ application.tracking_id }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="bi bi-file-earmark-text"></i> Application Details</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="window.open('{{ url_for('print_application', app_id=application.id) }}', '_blank')">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                    <a href="{{ request.referrer or url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+
+            <!-- Application Card -->
+            <div class="card shadow-sm" id="printableArea">
+                <div class="card-header bg-sjec-navy text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ application.tracking_id }}</h5>
+                        <span class="badge {% if application.status == 'draft' %}bg-secondary
+                                          {% elif application.status == 'submitted' %}bg-warning
+                                          {% elif application.status == 'hod_approved' %}bg-info
+                                          {% elif application.status == 'acm_review' %}bg-info
+                                          {% elif application.status == 'acm_approved' %}bg-primary
+                                          {% elif application.status == 'dean_review' %}bg-primary
+                                          {% elif application.status == 'dean_approved' %}bg-primary
+                                          {% elif application.status == 'principal_approved' %}bg-success
+                                          {% elif application.status == 'director_approved' %}bg-success
+                                          {% elif application.status == 'rejected' %}bg-danger
+                                          {% else %}bg-info{% endif %}">
+                            {% if application.status == 'draft' %}DRAFT
+                            {% elif application.status == 'submitted' %}PENDING HOD REVIEW
+                            {% elif application.status == 'hod_approved' %}PENDING ACM REVIEW
+                            {% elif application.status == 'acm_review' %}UNDER ACM REVIEW
+                            {% elif application.status == 'acm_approved' %}PENDING DEAN REVIEW
+                            {% elif application.status == 'dean_review' %}UNDER DEAN REVIEW
+                            {% elif application.status == 'dean_approved' %}PENDING PRINCIPAL REVIEW
+                            {% elif application.status == 'principal_approved' %}PENDING DIRECTOR REVIEW
+                            {% elif application.status == 'director_approved' %}APPROVED
+                            {% elif application.status == 'rejected' %}REJECTED
+                            {% else %}{{ application.status|replace('_', ' ')|upper }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 40px;">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold">
+                            {% if application.application_type == 'conference_registration' %}
+                                ASSESSMENT OF QUALITY – CONFERENCE REGISTRATION
+                            {% elif application.application_type == 'publication_incentive' %}
+                                ASSESSMENT OF QUALITY – APPLICATION FOR PUBLICATION INCENTIVES
+                            {% else %}
+                                ASSESSMENT OF QUALITY – JOURNAL PUBLICATION SUPPORT
+                            {% endif %}
+                        </h4>
+                        <hr>
+                    </div>
+
+                    <!-- Applicant Details -->
+                    <p><strong>1. Name of the Applicant:</strong> {{ application.applicant_name }}</p>
+                    <p><strong>2. Title of the {% if application.application_type == 'conference_registration' %}Paper Presented{% else %}Publication{% endif %}:</strong><br>
+                        {{ application.title_of_paper }}</p>
+                    <p><strong>3. Application for:</strong> 
+                        {% if application.application_type == 'conference_registration' %}Conference Registration
+                        {% elif application.application_type == 'publication_incentive' %}Publication Incentive
+                        {% else %}Journal Publication Support{% endif %}
+                    </p>
+
+                    <!-- Conference Registration Fields -->
+                    {% if application.application_type == 'conference_registration' %}
+                    <p><strong>4. Type of Conference:</strong> {{ application.type_of_conference }}</p>
+                    <p><strong>5. Name of the Conference:</strong> {{ application.conference_name }}</p>
+                    <p><strong>6. Publisher/Organizer Details:</strong><br>{{ application.conference_organizer }}</p>
+                    <p><strong>7. Place and Date of Conference:</strong> {{ application.conference_place_date }}</p>
+                    <p><strong>8. Conference Registration Fee (Rs):</strong> {{ application.conference_fee }}</p>
+                    
+                    {% else %}
+                    <!-- Publication Incentive / Journal Support Fields -->
+                    
+                    {# NEW FIELDS: Publication Category and National/International #}
+                    {% if application.publication_category %}
+                    <p><strong>4. Publication Category:</strong> 
+                        <span class="badge bg-primary">{{ application.publication_category }}</span>
+                        {% if application.is_national_international %}
+                        <span class="badge bg-secondary">{{ application.is_national_international }}</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    
+                    {# Author Counts from SJEC (NEW FIELDS) #}
+                    {% if application.publication_category == 'Journal' and (application.num_first_authors_sjec is not none or application.num_corresponding_authors_sjec is not none or application.num_coauthors_sjec is not none) %}
+                    <p><strong>Author Distribution (SJEC Faculty):</strong></p>
+                    <ul class="mb-2">
+                        <li>First Authors from SJEC: {{ application.num_first_authors_sjec or 0 }}</li>
+                        <li>Corresponding Authors from SJEC: {{ application.num_corresponding_authors_sjec or 0 }}</li>
+                        <li>Co-Authors from SJEC: {{ application.num_coauthors_sjec or 0 }}</li>
+                    </ul>
+                    {% endif %}
+                    
+                    <p><strong>5. Type of Publication:</strong> {{ application.type_of_publication }}</p>
+                    
+                    {# Only show journal fields if publication category is Journal or if category not set (old applications) #}
+                    {% if not application.publication_category or application.publication_category == 'Journal' %}
+                    <p><strong>6. Type of Journal:</strong> {{ application.type_of_journal }}</p>
+                    <p><strong>7. Name of the Journal:</strong> {{ application.journal_name }}</p>
+                    <p><strong>8. Quartile of the Journal (If any):</strong> {{ application.journal_quartile or 'N/A' }}
+                        {% if application.status in ['acm_approved', 'dean_review', 'dean_approved', 'principal_approved', 'director_approved'] %}
+                            {% for review in acm_reviews %}
+                                {% if review.decision == 'approved' and review.edited_fields %}
+                                    {% set edits = review.edited_fields|from_json %}
+                                    {% if edits.journal_quartile and edits.journal_quartile.old is defined and edits.journal_quartile.old != edits.journal_quartile.new %}
+                                        <span class="badge bg-warning text-dark ms-2" title="Original value: {{ edits.journal_quartile.old or 'N/A' }}">
+                                            <i class="bi bi-pencil-square"></i> Updated by ACM from "{{ edits.journal_quartile.old or 'N/A' }}"
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </p>
+                    <p><strong>8. Impact Factor of the Journal (If any):</strong> {{ application.journal_impact_factor or 'N/A' }}
+                        {% if application.status in ['acm_approved', 'dean_review', 'dean_approved', 'principal_approved', 'director_approved'] %}
+                            {% for review in acm_reviews %}
+                                {% if review.decision == 'approved' and review.edited_fields %}
+                                    {% set edits = review.edited_fields|from_json %}
+                                    {% if edits.journal_impact_factor and edits.journal_impact_factor.old is defined and edits.journal_impact_factor.old != edits.journal_impact_factor.new %}
+                                        <span class="badge bg-warning text-dark ms-2" title="Original value: {{ edits.journal_impact_factor.old or 'N/A' }}">
+                                            <i class="bi bi-pencil-square"></i> Updated by ACM from "{{ edits.journal_impact_factor.old or 'N/A' }}"
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </p>
+                    <p><strong>9. Type of Indexing:</strong> {{ application.indexing_type }}
+                        {% if application.status in ['acm_approved', 'dean_review', 'dean_approved', 'principal_approved', 'director_approved'] %}
+                            {% for review in acm_reviews %}
+                                {% if review.decision == 'approved' and review.edited_fields %}
+                                    {% set edits = review.edited_fields|from_json %}
+                                    {% if edits.indexing_type and edits.indexing_type.old is defined and edits.indexing_type.old != edits.indexing_type.new %}
+                                        <span class="badge bg-warning text-dark ms-2" title="Original value: {{ edits.indexing_type.old or 'N/A' }}">
+                                            <i class="bi bi-pencil-square"></i> Updated by ACM from "{{ edits.indexing_type.old or 'N/A' }}"
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </p>
+                    <p><strong>10. Publisher Details:</strong><br>{{ application.publisher_details }}</p>
+                    {% endif %}
+                    {# End of Journal-specific fields block #}
+                    
+                    <!-- Journal Support Specific Fields -->
+                    {% if application.application_type == 'journal_support' %}
+                    {% if application.apc_fees %}
+                    <p><strong>11. APC Fees (Article Processing Charges):</strong> ₹ {{ application.apc_fees|indian_format if application.apc_fees else 'N/A' }}</p>
+                    {% endif %}
+                    {% if application.expected_charges %}
+                    <p><strong>12. Expected Charges:</strong> ₹ {{ application.expected_charges|indian_format }}</p>
+                    {% endif %}
+                    <p><strong>13. Date of Publication:</strong> {{ application.publication_date.strftime('%d-%m-%Y') if application.publication_date else 'N/A' }}</p>
+                    {% else %}
+                    <p><strong>11. Date of Publication:</strong> {{ application.publication_date.strftime('%d-%m-%Y') if application.publication_date else 'N/A' }}</p>
+                    {% endif %}
+                    
+                    <!-- Supporting Documents Section -->
+                    {% if application.documents %}
+                    <div class="mb-4">
+                        <p><strong>{% if application.application_type == 'journal_support' %}14{% else %}12{% endif %}. Supporting Documents:</strong></p>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="list-group">
+                                    {% for doc in application.documents %}
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div>
+                                                <i class="bi bi-file-earmark-{{ 'pdf' if doc.file_type == 'pdf' else 'image' if doc.file_type in ['png', 'jpeg', 'jpg'] else 'word' }} text-primary" style="font-size: 1.5rem;"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ doc.filename }}</strong>
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="bi bi-clock"></i> Uploaded: {{ doc.uploaded_at.strftime('%d-%m-%Y %I:%M %p') }}
+                                                    {% if doc.file_size %}
+                                                    | <i class="bi bi-file-earmark"></i> Size: {{ (doc.file_size / 1024)|round(2) }} KB
+                                                    {% endif %}
+                                                    {% if doc.document_type %}
+                                                    | <span class="badge bg-secondary">{{ doc.document_type }}</span>
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="btn-group">
+                                            {% if doc.file_type == 'pdf' %}
+                                            <a href="{{ url_for('download_application_document', doc_id=doc.id) }}?view=1" 
+                                               class="btn btn-sm btn-primary" target="_blank" title="View PDF">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                            {% endif %}
+                                            <a href="{{ url_for('download_application_document', doc_id=doc.id) }}" 
+                                               class="btn btn-sm btn-outline-primary" download title="Download">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Legacy PDF Download for Publication Incentive (for backward compatibility) -->
+                    {% if application.application_type == 'publication_incentive' and application.publication_pdf and not application.documents %}
+                    <p><strong>12. Publication PDF:</strong> 
+                        <a href="{{ url_for('view_application_pdf', application_id=application.id) }}" class="btn btn-sm btn-primary me-2" target="_blank">
+                            <i class="bi bi-eye"></i> View PDF
+                        </a>
+                        <a href="{{ url_for('download_application_pdf', application_id=application.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i> Download PDF
+                        </a>
+                    </p>
+                    {% endif %}
+                    {% endif %}
+
+                    <!-- Signature -->
+                    <div class="my-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <p class="mb-0"><strong>
+                                    {% if application.application_type == 'conference_registration' %}9
+                                    {% elif application.application_type == 'publication_incentive' %}
+                                        {% if application.documents %}13{% else %}12{% endif %}
+                                    {% elif application.application_type == 'journal_support' %}
+                                        {% if application.documents %}15{% else %}14{% endif %}
+                                    {% else %}12{% endif %}. Signature of the Applicant:</strong></p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                {% if application.applicant.signature %}
+                                    <img src="{{ url_for('user_signature', user_id=application.applicant_id) }}" 
+                                         style="max-width: 200px; max-height: 80px; background: white; padding: 3px; border: 1px solid #ddd;">
+                                {% else %}
+                                    <em class="text-muted">No signature on file</em>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 text-end">
+                                <small>Date: {{ application.applicant_signature_date.strftime('%d-%m-%Y') }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if application.status != 'draft' %}
+                    <hr class="my-4">
+                    <h6 class="fw-bold">Assessment Committee Proceedings</h6>
+                    <p><strong>{% if application.application_type == 'conference_registration' %}Conference Registration
+                       {% elif application.application_type == 'publication_incentive' %}Publication Incentive
+                       {% else %}Journal Publication Support{% endif %} Applicable:</strong> 
+                       {{ application.acm_applicable or '___________' }}
+                    </p>
+                    <p><strong>Comments, if any:</strong> {{ application.acm_comments or '______________________________________' }}</p>
+
+                    {% if acm_reviews %}
+                    <div class="my-3">
+                        <p><strong>Signatures of Assessment Committee Members:</strong></p>
+                        {% for review in acm_reviews %}
+                        <div class="mb-2">
+                            <p>{{ review.reviewer.name }} - 
+                                <span class="badge {% if review.decision == 'approved' %}bg-success
+                                                   {% elif review.decision == 'rejected' %}bg-danger
+                                                   {% else %}bg-secondary{% endif %}">
+                                    {{ review.decision or 'Pending' }}
+                                </span>
+                            </p>
+                            {% if review.comments %}
+                            <small class="text-muted">Comment: {{ review.comments }}</small>
+                            {% endif %}
+                            {% if review.edited_fields %}
+                            <div class="alert alert-info alert-sm mt-2">
+                                <strong><i class="bi bi-pencil"></i> Field Updates by ACM:</strong>
+                                {% set edits = review.edited_fields|from_json %}
+                                <ul class="mb-0 mt-1">
+                                    {% if edits.journal_impact_factor %}
+                                    <li><strong>Impact Factor:</strong> 
+                                        {% if edits.journal_impact_factor.old is defined %}
+                                            Updated from <span class="text-decoration-line-through">{{ edits.journal_impact_factor.old or 'N/A' }}</span> 
+                                            to <span class="text-success fw-bold">{{ edits.journal_impact_factor.new }}</span>
+                                        {% else %}
+                                            Updated to {{ edits.journal_impact_factor }}
+                                        {% endif %}
+                                    </li>
+                                    {% endif %}
+                                    {% if edits.indexing_type %}
+                                    <li><strong>Indexing Type:</strong> 
+                                        {% if edits.indexing_type.old is defined %}
+                                            Updated from <span class="text-decoration-line-through">{{ edits.indexing_type.old or 'N/A' }}</span> 
+                                            to <span class="text-success fw-bold">{{ edits.indexing_type.new }}</span>
+                                        {% else %}
+                                            Updated to {{ edits.indexing_type }}
+                                        {% endif %}
+                                    </li>
+                                    {% endif %}
+                                    {% if edits.journal_quartile %}
+                                    <li><strong>Journal Quartile:</strong> 
+                                        {% if edits.journal_quartile.old is defined %}
+                                            Updated from <span class="text-decoration-line-through">{{ edits.journal_quartile.old or 'N/A' }}</span> 
+                                            to <span class="text-success fw-bold">{{ edits.journal_quartile.new }}</span>
+                                        {% else %}
+                                            Updated to {{ edits.journal_quartile }}
+                                        {% endif %}
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <p>Approvals: {{ application.acm_approvals_count }} / 3</p>
+                    {% if application.acm_review_date %}
+                    <p>Date: {{ application.acm_review_date.strftime('%d-%m-%Y') }}</p>
+                    {% endif %}
+                    {% endif %}
+
+                    {% if application.dean_recommended_amount or application.dean_first_author_amount %}
+                    <hr class="my-4">
+                    <h6 class="fw-bold">Dean of R&D Recommendation</h6>
+                    {% if application.application_type == 'publication_incentive' %}
+                    <p><strong>Recommended Publication Incentive for Journal Article:</strong></p>
+                    <p>First Author (Rs): {{ application.dean_first_author_amount|indian_format if application.dean_first_author_amount else '__________' }}</p>
+                    <p>Corresponding Author (Rs): {{ application.dean_corresponding_author_amount|indian_format if application.dean_corresponding_author_amount else '__________' }}</p>
+                    <p>Co-Author/s (each, Rs): {{ application.dean_coauthor_amount|indian_format if application.dean_coauthor_amount else '__________' }}</p>
+                    {% else %}
+                    <p><strong>Recommended Grant Amount:</strong> ₹ {{ application.dean_recommended_amount|indian_format if application.dean_recommended_amount else '__________' }}</p>
+                    {% endif %}
+                    {% if application.dean_comments %}
+                    <p><strong>Dean's Comments:</strong> {{ application.dean_comments }}</p>
+                    {% endif %}
+                    <p>Dean – R&D Signature: __________________</p>
+                    {% if application.dean_signature_date %}
+                    <p>Date: {{ application.dean_signature_date.strftime('%d-%m-%Y') }}</p>
+                    {% endif %}
+                    {% endif %}
+
+                    {% if application.principal_approved or application.director_approved %}
+                    <hr class="my-4">
+                    <h6 class="fw-bold">Approval Section</h6>
+                    <p>Principal: {{ '✓ Approved' if application.principal_approved else '___________________' }}</p>
+                    <p>Director: {{ '✓ Approved' if application.director_approved else '___________________' }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function printApplication() {
+    const printWindow = window.open('', '', 'width=900,height=800');
+    
+    // Get application data
+    const appType = '{{ application.application_type }}';
+    const applicantName = '{{ application.applicant_name }}';
+    const titleOfPaper = `{{ application.title_of_paper }}`;
+    const applicationFor = appType === 'conference_registration' ? 'Conference Registration' : 
+                          appType === 'publication_incentive' ? 'Publication Incentive' : 'Journal Publication Support';
+    
+    // Get full URL for signature image
+    const signatureUrl = '{{ url_for("user_signature", user_id=application.applicant_id, _external=True) if application.applicant.signature else "" }}';
+    
+    // Prepare ACM members data
+    const acmMembers = [
+        {% if acm_reviews %}
+            {% for review in acm_reviews[:3] %}
+                { name: '{{ review.reviewer.name }}' },
+            {% endfor %}
+        {% endif %}
+    ];
+    // Fill remaining slots with empty
+    while (acmMembers.length < 3) {
+        acmMembers.push({ name: '' });
+    }
+    
+    // Generate ACM signatures HTML
+    let acmSignaturesHTML = '';
+    acmMembers.forEach(member => {
+        acmSignaturesHTML += `
+            <div>
+                ___________________<br>
+                (Name: ${member.name || '___________'})
+            </div>
+        `;
+    });
+    
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Application - {{ application.tracking_id }}</title>
+            <style>
+                @page { 
+                    size: A4; 
+                    margin: 1cm; 
+                }
+                body { 
+                    font-family: Arial, sans-serif; 
+                    font-size: 11pt;
+                    line-height: 1.3;
+                    margin: 0;
+                    padding: 10px;
+                }
+                .document {
+                    border: 2px solid #000;
+                    padding: 15px;
+                    max-width: 100%;
+                }
+                h4 { 
+                    text-align: center; 
+                    margin: 10px 0 15px 0;
+                    font-size: 13pt;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }
+                .field {
+                    margin-bottom: 8px;
+                    line-height: 1.4;
+                }
+                .field strong {
+                    font-weight: bold;
+                }
+                .field-value {
+                    font-style: italic;
+                    margin-left: 5px;
+                }
+                .horizontal-line {
+                    border-bottom: 1px solid #000;
+                    margin: 15px 0;
+                }
+                .signature-section {
+                    margin-top: 15px;
+                    margin-bottom: 15px;
+                }
+                .signature-img {
+                    max-width: 150px;
+                    max-height: 60px;
+                    display: block;
+                    margin: 5px 0;
+                }
+                .section-header {
+                    font-weight: bold;
+                    margin-top: 15px;
+                    margin-bottom: 10px;
+                    text-decoration: underline;
+                }
+                .acm-signatures {
+                    margin-top: 10px;
+                }
+                .acm-signatures div {
+                    display: inline-block;
+                    width: 30%;
+                    margin-right: 3%;
+                    text-align: center;
+                }
+                .dean-table {
+                    width: 100%;
+                    margin-top: 8px;
+                    border-collapse: collapse;
+                }
+                .dean-table td {
+                    border: 1px solid #000;
+                    padding: 8px;
+                    text-align: center;
+                }
+                .approval-section {
+                    margin-top: 15px;
+                    display: flex;
+                    justify-content: space-between;
+                }
+                .approval-section > div {
+                    width: 48%;
+                }
+                .badge, .btn, .alert { display: none; }
+                @media print {
+                    body { margin: 0; padding: 10px; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="document">
+                <h4>ASSESSMENT OF QUALITY – APPLICATION FOR PUBLICATION INCENTIVES</h4>
+                
+                <div class="horizontal-line"></div>
+                
+                <div class="field">
+                    <strong>1. Name of the Applicant:</strong>
+                    <span class="field-value">${applicantName}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>2. Title of the Publication:</strong><br>
+                    <span class="field-value">${titleOfPaper || 'Not filled'}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>3. Application for:</strong>
+                    <span class="field-value">${applicationFor}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>4. Type of Publication:</strong>
+                    <span class="field-value">{{ application.type_of_publication or application.type_of_conference or 'Not selected' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>5. Type of Journal:</strong>
+                    <span class="field-value">{{ application.type_of_journal or 'Not selected' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>6. Name of the Journal:</strong>
+                    <span class="field-value">{{ application.journal_name or application.conference_name or 'Not filled' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>7. Quartile of the Journal (If any):</strong>
+                    <span class="field-value">{{ application.journal_quartile or 'N/A' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>8. Impact Factor of the Journal (If any):</strong>
+                    <span class="field-value">{{ application.journal_impact_factor or 'N/A' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>9. Type of Indexing:</strong>
+                    <span class="field-value">{{ application.indexing_type or 'Not selected' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>10. Publisher Details:</strong><br>
+                    <span class="field-value">{{ application.publisher_details or application.conference_organizer or 'Not filled' }}</span>
+                </div>
+                
+                <div class="field">
+                    <strong>11. Date of Publication:</strong>
+                    <span class="field-value">{{ application.publication_date.strftime('%d-%m-%Y') if application.publication_date else 'Not filled' }}</span>
+                </div>
+                
+                <div class="field signature-section">
+                    <strong>12. Signature of the Applicant:</strong><br>
+                    ${signatureUrl ? '<img src="' + signatureUrl + '" class="signature-img" alt="Signature">' : ''}
+                    <div>Date: {{ application.applicant_signature_date.strftime('%d-%m-%Y') if application.applicant_signature_date else '' }}</div>
+                </div>
+                
+                <div class="horizontal-line"></div>
+                
+                <div class="section-header">Assessment Committee Proceedings</div>
+                
+                <div class="field">
+                    <strong>Publication Incentive Applicable:</strong> {{ application.acm_applicable or '___________' }}
+                </div>
+                
+                <div class="field">
+                    <strong>Comments, if any:</strong> {{ application.acm_comments or '___________________________________________' }}
+                </div>
+                
+                <div class="field">
+                    <strong>Signatures of Assessment Committee Members:</strong>
+                </div>
+                
+                <div class="acm-signatures">
+                    ${acmSignaturesHTML}
+                </div>
+                
+                <div class="field" style="margin-top: 10px;">
+                    <strong>Date:</strong> {{ application.acm_review_date.strftime('%d-%m-%Y') if application.acm_review_date else '___________' }}
+                </div>
+                
+                <div class="horizontal-line"></div>
+                
+                <div class="section-header">Dean of R&D Recommendation</div>
+                
+                <div class="field">
+                    <strong>Recommended Publication Incentive for Journal Article:</strong>
+                </div>
+                
+                <div class="field">
+                    First Author (Rs): {{ application.dean_first_author_amount|indian_format if application.dean_first_author_amount else '___________' }}
+                </div>
+                
+                <div class="field">
+                    Corresponding Author (Rs): {{ application.dean_corresponding_author_amount|indian_format if application.dean_corresponding_author_amount else '___________' }}
+                </div>
+                
+                <div class="field">
+                    Co-Author/s (each, Rs): {{ application.dean_coauthor_amount|indian_format if application.dean_coauthor_amount else '___________' }}
+                </div>
+                
+                <div class="field" style="margin-top: 15px;">
+                    Dean – R&D Signature: ___________________
+                    <div style="margin-top: 5px;">Date: {{ application.dean_signature_date.strftime('%d-%m-%Y') if application.dean_signature_date else '' }}</div>
+                </div>
+                
+                <div class="horizontal-line"></div>
+                
+                <div class="section-header">Approval Section</div>
+                
+                <div class="approval-section">
+                    <div>
+                        <strong>Principal:</strong> {{ '✓ Approved' if application.principal_approved else '___________________' }}
+                        <div style="margin-top: 5px;">Date: {{ application.principal_signature_date.strftime('%d-%m-%Y') if application.principal_signature_date else '' }}</div>
+                    </div>
+                    <div>
+                        <strong>Director:</strong> {{ '✓ Approved' if application.director_approved else '___________________' }}
+                        <div style="margin-top: 5px;">Date: {{ application.director_signature_date.strftime('%d-%m-%Y') if application.director_signature_date else '' }}</div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+</script>
+{% endblock %}

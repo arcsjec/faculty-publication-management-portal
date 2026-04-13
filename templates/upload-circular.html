@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Circular - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-upload"></i> Upload New Circular</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('upload_circular') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">Circular Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="title" required 
+                                   placeholder="Enter circular title">
+                            <small class="text-muted">This will be the main heading of the circular</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control" name="subject" 
+                                   placeholder="Enter subject line (optional)">
+                            <small class="text-muted">Brief subject line for the circular</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Body Content</label>
+                            <textarea class="form-control" name="body" rows="8" 
+                                      placeholder="Enter the full content of the circular (optional)..."></textarea>
+                            <small class="text-muted">Detailed content of the circular</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Attachment (Optional)</label>
+                            <input type="file" class="form-control" name="file" accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> Allowed formats: PDF, JPG, JPEG, PNG (Max 25MB)
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-lightbulb"></i> <strong>Note:</strong> 
+                            This circular will be visible to all users (faculty, HODs, Principal, Vice Principal, Admin) 
+                            and will appear on the login page. All users will receive a notification.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-upload"></i> Upload Circular
+                            </button>
+                            <a href="{{ url_for('view_circulars') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-eye"></i> Tips for Writing Circulars</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Keep the title clear and concise</li>
+                        <li>Use professional language in the body</li>
+                        <li>Include all necessary details (dates, deadlines, contact information)</li>
+                        <li>Attach supporting documents if needed</li>
+                        <li>Review before uploading - circular will be numbered automatically</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

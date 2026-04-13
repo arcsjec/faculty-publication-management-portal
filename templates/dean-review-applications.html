@@ -1,0 +1,712 @@
+{% extends "base.html" %}
+
+{% block title %}Dean Review - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-award"></i> Dean R&D - Review Applications</h2>
+            <p class="text-muted">Review ACM-approved applications and finalize grant/incentive amounts</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Review</h6>
+                    <h2>{{ pending_count }}</h2>
+                    <small>ACM-approved applications</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Approved by You</h6>
+                    <h2>{{ approved_count }}</h2>
+                    <small>Forwarded to Principal</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Rejected</h6>
+                    <h2>{{ rejected_count }}</h2>
+                    <small>Declined applications</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Total Reviewed</h6>
+                    <h2>{{ total_reviewed }}</h2>
+                    <small>All applications reviewed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3" id="deanTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                Pending Review <span class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reviewed-tab" data-bs-toggle="tab" data-bs-target="#reviewed" type="button" role="tab">
+                Reviewed <span class="badge bg-secondary ms-1">{{ total_reviewed }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="deanTabsContent">
+        <!-- Pending Review Tab -->
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            {% if pending_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Department</th>
+                            <th>Wallet Balance</th>
+                            <th>Title/Purpose</th>
+                            <th>ACM Approval</th>
+                            <th>ACM Approved On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in pending_applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}<br><small class="text-muted">{{ app.applicant.email }}</small></td>
+                            <td>{{ app.applicant.department.name if app.applicant.department else 'N/A' }}</td>
+                            <td>
+                                {% set rrf_balance = app.applicant.wallet_balance|default(0) %}
+                                {% set epp_balance = app.applicant.epp_balance|default(0) %}
+                                {% set epp_inr = epp_balance * 2000 %}
+                                {% set total_available = rrf_balance + epp_inr %}
+                                <div class="text-nowrap">
+                                    <strong class="text-success">₹ {{ total_available|indian_format }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                        RRF: ₹ {{ rrf_balance|indian_format }}<br>
+                                        EPP: {{ "%.1f"|format(epp_balance) }} (₹ {{ epp_inr|indian_format }})
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <strong>{{ app.title_of_paper[:60] }}{% if app.title_of_paper|length > 60 %}...{% endif %}</strong><br>
+                                <small>{{ app.conference_name }}</small>
+                                {% else %}
+                                <strong>{{ app.title_of_paper[:60] }}{% if app.title_of_paper|length > 60 %}...{% endif %}</strong><br>
+                                <small>{{ app.journal_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ app.acm_approvals_count }}/3 ACM Approved</span>
+                                {% if app.acm_reviews|length > 0 %}
+                                <br>
+                                <small class="text-muted">
+                                    {% for review in app.acm_reviews %}
+                                    {% if review.decision == 'approved' %}
+                                    <i class="bi bi-check-circle-fill text-success"></i> {{ review.reviewer.name.split()[0] }}
+                                    {% endif %}
+                                    {% endfor %}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.acm_approved_at.strftime('%d %b %Y') if app.acm_approved_at else '-' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="showReviewModal({{ app.id }}, '{{ app.application_type }}')">
+                                    <i class="bi bi-pencil-square"></i> Review
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No applications pending your review at this time.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Reviewed Tab -->
+        <div class="tab-pane fade" id="reviewed" role="tabpanel">
+            {% if reviewed_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Wallet Balance</th>
+                            <th>Your Decision</th>
+                            <th>Recommended Amount</th>
+                            <th>Reviewed On</th>
+                            <th>Current Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in reviewed_applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}</td>
+                            <td>
+                                {% set rrf_balance = app.applicant.wallet_balance|default(0) %}
+                                {% set epp_balance = app.applicant.epp_balance|default(0) %}
+                                {% set epp_inr = epp_balance * 2000 %}
+                                {% set total_available = rrf_balance + epp_inr %}
+                                <div class="text-nowrap">
+                                    <strong class="text-success">Rs {{ "%.2f"|format(total_available)|replace('.00', '') }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        RRF: Rs {{ "%.0f"|format(rrf_balance) }}<br>
+                                        EPP: {{ "%.1f"|format(epp_balance) }} (Rs {{ "%.0f"|format(epp_inr) }})
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if app.dean_approved %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if app.dean_approved %}Approved{% else %}Rejected{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if app.application_type == 'publication_incentive' %}
+                                <small>
+                                    1st: ₹{{ (app.dean_first_author_amount or 0)|indian_format }}<br>
+                                    Corr: ₹{{ (app.dean_corresponding_author_amount or 0)|indian_format }}<br>
+                                    Co: ₹{{ (app.dean_coauthor_amount or 0)|indian_format }}
+                                </small>
+                                {% else %}
+                                ₹{{ (app.dean_recommended_amount or 0)|indian_format }}
+                                {% endif %}
+                            </td>
+                            <td>{{ app.dean_reviewed_at.strftime('%d %b %Y') if app.dean_reviewed_at else '-' }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if app.status == 'dean_approved' %}bg-primary
+                                    {% elif app.status == 'principal_approved' %}bg-info
+                                    {% elif app.status == 'director_approved' %}bg-success
+                                    {% elif app.status == 'rejected' %}bg-danger
+                                    {% else %}bg-warning{% endif %}">
+                                    {{ app.status|replace('_', ' ')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> You haven't reviewed any applications yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Dean Review Modal -->
+<div class="modal fade" id="deanReviewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Dean Review & Recommendation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="deanReviewFormContainer">
+                    <form id="deanReviewForm">
+                        <input type="hidden" id="dean_review_app_id" name="app_id">
+                        <input type="hidden" id="dean_review_app_type" name="app_type">
+                        
+                        <!-- ACM Review Summary (Hidden for Conference Registration) -->
+                        <div class="card mb-3 border-success" id="acmReviewCard">
+                            <div class="card-header bg-success text-white">
+                                <i class="bi bi-clipboard-check"></i> ACM Panel Review Summary
+                            </div>
+                            <div class="card-body" id="acmReviewSummary">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Application Details -->
+                        <div class="card mb-3 border-info" id="applicationDetailsCard" style="display: none;">
+                            <div class="card-header bg-info text-white">
+                                <i class="bi bi-file-text"></i> Application Details
+                            </div>
+                            <div class="card-body" id="applicationDetails">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Recommendation Amounts Section -->
+                        <div class="card mb-3 border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <i class="bi bi-currency-rupee"></i> Recommended Grant/Incentive Amount
+                            </div>
+                            <div class="card-body">
+                                <!-- Faculty Requested Amounts Display -->
+                                <div class="card bg-light mb-3" id="faculty_requested_amounts" style="display: none;">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-secondary mb-2">
+                                            <i class="bi bi-person-check"></i> Faculty Requested Amounts:
+                                        </h6>
+                                        <div id="faculty_amounts_content">
+                                            <!-- Populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Conference Registration & Journal Support -->
+                                <div id="singleAmountSection" style="display: none;">
+                                    <!-- Faculty Wallet & Requested Amount Info -->
+                                    <div class="row mb-3" id="facultyWalletInfo">
+                                        <div class="col-md-6">
+                                            <div class="alert alert-info mb-0">
+                                                <h6 class="mb-1"><i class="bi bi-wallet2"></i> <strong>Faculty Wallet Balance:</strong></h6>
+                                                <div id="walletBalanceDisplay">
+                                                    <small class="text-muted">Loading...</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="alert alert-primary mb-0">
+                                                <h6 class="mb-1"><i class="bi bi-cash-stack"></i> <strong>Amount Requested by Faculty:</strong></h6>
+                                                <h5 class="mb-0 text-dark" id="facultyRequestedAmount">₹0</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Recommended Amount (₹) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="dean_amount" name="amount" 
+                                                   min="0" step="100" placeholder="Enter amount">
+                                            <small class="text-muted">Enter the grant/support amount you recommend (editable)</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Publication Incentive - Dynamic Single Field Based on Author Type -->
+                                <div id="threeAmountSection" style="display: none;">
+                                    <div class="alert alert-info" id="authorTypeInfo">
+                                        <i class="bi bi-info-circle"></i> <strong>Publication Incentive:</strong>
+                                        Enter recommended amount for the applicant's authorship role.
+                                    </div>
+                                    
+                                    <!-- Dynamic field container - will show only relevant author type -->
+                                    <div id="dynamicAuthorField">
+                                        <!-- First Author Field -->
+                                        <div id="firstAuthorField" style="display: none;">
+                                            <label class="form-label">First Author (₹) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="dean_amount_first" name="amount_first" 
+                                                   min="0" step="100" placeholder="First author amount">
+                                        </div>
+                                        
+                                        <!-- Corresponding Author Field -->
+                                        <div id="correspondingAuthorField" style="display: none;">
+                                            <label class="form-label">Corresponding Author (₹) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="dean_amount_corresponding" name="amount_corresponding" 
+                                                   min="0" step="100" placeholder="Corresponding author amount">
+                                        </div>
+                                        
+                                        <!-- Co-Author Field -->
+                                        <div id="coAuthorField" style="display: none;">
+                                            <label class="form-label">Co-Author (₹) <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" id="dean_amount_coauthors" name="amount_coauthors" 
+                                                   min="0" step="100" placeholder="Co-author amount">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dean Comments -->
+                        <div class="mb-3">
+                            <label class="form-label">Dean's Comments / Recommendations <span class="text-danger" id="commentsRequired">*</span></label>
+                            <textarea class="form-control" id="dean_comments" name="comments" rows="4"
+                                placeholder="Provide your detailed review, recommendations, and justification for the amounts..."></textarea>
+                            <small class="text-muted" id="commentsHint">Provide recommendations and justification for the amounts.</small>
+                        </div>
+
+                        <!-- Decision -->
+                        <div class="mb-3">
+                            <label class="form-label">Decision <span class="text-danger">*</span></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="decision" id="decision_approve" value="approve" required>
+                                <label class="btn btn-outline-success" for="decision_approve">
+                                    <i class="bi bi-check-circle"></i> Approve & Forward to Principal
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="decision" id="decision_reject" value="reject">
+                                <label class="btn btn-outline-danger" for="decision_reject">
+                                    <i class="bi bi-x-circle"></i> Reject Application
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Note:</strong> 
+                            Your decision will forward this application to the Principal for final approval. 
+                            Please ensure all amounts and comments are accurate.
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitDeanReview()">
+                    <i class="bi bi-send"></i> Submit Review
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewApplication(appId) {
+    window.location.href = `/applications/view/${appId}`;
+}
+
+function showReviewModal(appId, appType) {
+    document.getElementById('dean_review_app_id').value = appId;
+    document.getElementById('dean_review_app_type').value = appType;
+    
+    // Reset form
+    document.getElementById('deanReviewForm').reset();
+    document.getElementById('dean_amount').value = '';
+    document.getElementById('dean_amount_first').value = '';
+    document.getElementById('dean_amount_corresponding').value = '';
+    document.getElementById('dean_amount_coauthors').value = '';
+    document.getElementById('dean_comments').value = '';
+    
+    // Reset comments requirement (default to required)
+    document.getElementById('commentsRequired').style.display = 'inline';
+    document.getElementById('commentsHint').textContent = 'Provide recommendations and justification for the amounts.';
+    
+    // Hide ACM summary for Conference Registration
+    if (appType === 'conference_registration') {
+        document.getElementById('acmReviewCard').style.display = 'none';
+    } else {
+        document.getElementById('acmReviewCard').style.display = 'block';
+    }
+    
+    // Show appropriate amount section based on application type
+    if (appType === 'publication_incentive') {
+        document.getElementById('singleAmountSection').style.display = 'none';
+        document.getElementById('threeAmountSection').style.display = 'block';
+        
+        // Fetch and calculate recommended amounts based on author type
+        fetch(`/dean/calculate-incentive-amounts/${appId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Hide all author type fields first and reset all values to 0
+                    document.getElementById('firstAuthorField').style.display = 'none';
+                    document.getElementById('correspondingAuthorField').style.display = 'none';
+                    document.getElementById('coAuthorField').style.display = 'none';
+                    
+                    // Reset ALL input values to 0 (both visible and hidden will be 0 initially)
+                    document.getElementById('dean_amount_first').value = 0;
+                    document.getElementById('dean_amount_corresponding').value = 0;
+                    document.getElementById('dean_amount_coauthors').value = 0;
+                    
+                    // Show only the relevant field based on author type and set its value
+                    if (data.author_type === 'Author' || data.author_type === 'First Author') {
+                        document.getElementById('firstAuthorField').style.display = 'block';
+                        document.getElementById('dean_amount_first').value = data.amounts.first_author || 0;
+                        // Keep others at 0 (already set above)
+                    } else if (data.author_type === 'Corresponding Author') {
+                        document.getElementById('correspondingAuthorField').style.display = 'block';
+                        document.getElementById('dean_amount_corresponding').value = data.amounts.corresponding_author || 0;
+                        // Keep others at 0 (already set above)
+                    } else if (data.author_type === 'Co-Author') {
+                        document.getElementById('coAuthorField').style.display = 'block';
+                        document.getElementById('dean_amount_coauthors').value = data.amounts.coauthor || 0;
+                        // Keep others at 0 (already set above)
+                    }
+                    
+                    // Update info message with author type
+                    if (data.author_type) {
+                        const authorTypeInfo = document.getElementById('authorTypeInfo');
+                        authorTypeInfo.innerHTML = `<i class="bi bi-info-circle"></i> <strong>Applicant Author Type:</strong> ${data.author_type}<br><small>Amount is pre-filled based on current incentive configuration and can be edited.</small>`;
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching amounts:', error));
+    } else {
+        document.getElementById('singleAmountSection').style.display = 'block';
+        document.getElementById('threeAmountSection').style.display = 'none';
+        
+        // Fetch faculty wallet balance and requested amount for conference/journal
+        fetch(`/dean/get-faculty-wallet/${appId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display wallet balance
+                    const walletHtml = `
+                        <p class="mb-1"><strong>RRF:</strong> <span class="text-success">₹${data.wallet.rrf_balance.toLocaleString('en-IN')}</span></p>
+                        <p class="mb-0"><strong>EPP:</strong> <span class="text-success">${data.wallet.epp_balance.toFixed(1)} points (₹${data.wallet.epp_inr.toLocaleString('en-IN')})</span></p>
+                    `;
+                    document.getElementById('walletBalanceDisplay').innerHTML = walletHtml;
+                    
+                    // Display requested amount and pre-fill recommended amount
+                    const requestedAmount = data.requested_amount || 0;
+                    document.getElementById('facultyRequestedAmount').textContent = '₹' + requestedAmount.toLocaleString('en-IN');
+                    document.getElementById('dean_amount').value = requestedAmount;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching wallet data:', error);
+                document.getElementById('walletBalanceDisplay').innerHTML = '<small class="text-danger">Error loading wallet data</small>';
+            });
+    }
+    
+    // Add event listeners for decision change
+    document.querySelectorAll('input[name="decision"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const commentsRequired = document.getElementById('commentsRequired');
+            const commentsHint = document.getElementById('commentsHint');
+            
+            if (this.value === 'approve') {
+                commentsRequired.style.display = 'none';  // Optional for approval
+                commentsHint.textContent = 'Optional: Provide recommendations and justification for the amounts.';
+            } else {
+                commentsRequired.style.display = 'inline';  // Required for rejection
+                commentsHint.textContent = 'Required: Explain the reason for rejection.';
+            }
+        });
+    });
+    
+    // Fetch ACM review details
+    fetch(`/dean/get-acm-reviews/${appId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Display ACM Reviews
+                let html = '<div class="row">';
+                data.reviews.forEach(review => {
+                    const badgeClass = review.decision === 'approved' ? 'bg-success' : 'bg-danger';
+                    html += `
+                        <div class="col-md-4 mb-2">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        ${review.reviewer_name}
+                                        <span class="badge ${badgeClass} float-end">${review.decision}</span>
+                                    </h6>
+                                    <p class="card-text"><small>${review.comments}</small></p>
+                                    <small class="text-muted">${review.reviewed_at}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                document.getElementById('acmReviewSummary').innerHTML = html;
+                
+                // Display Application Details (if publication incentive)
+                if (data.application && data.application.application_type === 'publication_incentive') {
+                    document.getElementById('applicationDetailsCard').style.display = 'block';
+                    let detailsHtml = '<div class="row">';
+                    
+                    // Author Type (most important for dean)
+                    if (data.application.author_type) {
+                        detailsHtml += `
+                            <div class="col-md-12 mb-3">
+                                <div class="alert alert-warning mb-0">
+                                    <h6 class="mb-1"><i class="bi bi-person-badge"></i> <strong>Faculty Selected Author Type:</strong></h6>
+                                    <h5 class="mb-0 text-dark"><strong>${data.application.author_type}</strong></h5>
+                                    <small class="text-muted">Incentive amount should be entered for this category</small>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // Other details in columns
+                    detailsHtml += '<div class="col-md-6">';
+                    
+                    // NEW: Publication Category and National/International
+                    if (data.application.publication_category) {
+                        detailsHtml += `<p><strong>Category:</strong> <span class="badge bg-primary">${data.application.publication_category}</span></p>`;
+                    }
+                    if (data.application.is_national_international) {
+                        detailsHtml += `<p><strong>Scope:</strong> <span class="badge bg-secondary">${data.application.is_national_international}</span></p>`;
+                    }
+                    
+                    // Journal-specific fields
+                    if (data.application.journal_quartile) {
+                        detailsHtml += `<p><strong>Journal Quartile:</strong> ${data.application.journal_quartile}</p>`;
+                    }
+                    if (data.application.indexing_type) {
+                        detailsHtml += `<p><strong>Indexing:</strong> ${data.application.indexing_type}</p>`;
+                    }
+                    detailsHtml += '</div><div class="col-md-6">';
+                    
+                    // NEW: Author Counts
+                    if (data.application.publication_category === 'Journal') {
+                        if (data.application.num_first_authors_sjec !== null || data.application.num_corresponding_authors_sjec !== null || data.application.num_coauthors_sjec !== null) {
+                            detailsHtml += `<p><strong>SJEC Authors:</strong><br>`;
+                            detailsHtml += `FA: ${data.application.num_first_authors_sjec || 0} | `;
+                            detailsHtml += `CA: ${data.application.num_corresponding_authors_sjec || 0} | `;
+                            detailsHtml += `Co-Authors: ${data.application.num_coauthors_sjec || 0}</p>`;
+                        }
+                    }
+                    
+                    if (data.application.journal_impact_factor) {
+                        detailsHtml += `<p><strong>Impact Factor:</strong> ${data.application.journal_impact_factor}</p>`;
+                    }
+                    detailsHtml += '</div>';
+                    
+                    detailsHtml += '</div>';
+                    document.getElementById('applicationDetails').innerHTML = detailsHtml;
+                } else {
+                    document.getElementById('applicationDetailsCard').style.display = 'none';
+                }
+                
+                // Hide the old faculty requested amounts card (redundant info)
+                const facultyAmountsCard = document.getElementById('faculty_requested_amounts');
+                if (facultyAmountsCard) {
+                    facultyAmountsCard.style.display = 'none';
+                }
+            }
+        });
+    
+    const modal = new bootstrap.Modal(document.getElementById('deanReviewModal'));
+    modal.show();
+}
+
+function submitDeanReview() {
+    const appId = document.getElementById('dean_review_app_id').value;
+    const appType = document.getElementById('dean_review_app_type').value;
+    const decision = document.querySelector('input[name="decision"]:checked')?.value;
+    const comments = document.getElementById('dean_comments').value.trim();
+    
+    if (!decision) {
+        alert('Please select a decision (Approve or Reject).');
+        return;
+    }
+    
+    // Validate comments for rejection only
+    if (decision === 'reject' && !comments) {
+        alert('Comments are required when rejecting an application.');
+        return;
+    }
+    
+    let amounts = {};
+    if (appType === 'publication_incentive') {
+        // Simply get the current values from the input fields (hidden ones will be 0)
+        amounts.amount_first = parseFloat(document.getElementById('dean_amount_first').value) || 0;
+        amounts.amount_corresponding = parseFloat(document.getElementById('dean_amount_corresponding').value) || 0;
+        amounts.amount_coauthors = parseFloat(document.getElementById('dean_amount_coauthors').value) || 0;
+        
+        console.log('Publication Incentive Amounts:', amounts);
+        console.log('First Author field value:', document.getElementById('dean_amount_first').value);
+        console.log('Corresponding Author field value:', document.getElementById('dean_amount_corresponding').value);
+        console.log('Co-Author field value:', document.getElementById('dean_amount_coauthors').value);
+        console.log('First Author field visible:', document.getElementById('firstAuthorField').style.display);
+        console.log('Corresponding Author field visible:', document.getElementById('correspondingAuthorField').style.display);
+        console.log('Co-Author field visible:', document.getElementById('coAuthorField').style.display);
+        
+        // Validate only if approval - check that at least ONE amount is greater than 0
+        if (decision === 'approve') {
+            const totalAmount = amounts.amount_first + amounts.amount_corresponding + amounts.amount_coauthors;
+            console.log('Total amount:', totalAmount);
+            if (totalAmount === 0) {
+                alert('Please enter the recommended amount for the applicant\'s author type.');
+                return;
+            }
+        }
+    } else {
+        amounts.amount = parseFloat(document.getElementById('dean_amount').value) || 0;
+        
+        if (decision === 'approve' && amounts.amount === 0) {
+            alert('Please enter the recommended amount.');
+            return;
+        }
+    }
+    
+    // Show loading
+    const submitBtn = event.target;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting...';
+    
+    const requestData = {
+        decision: decision,
+        comments: comments,
+        ...amounts
+    };
+    console.log('Sending request data:', requestData);
+    
+    fetch(`/dean/review/${appId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to submit review');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting review');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
+</script>
+
+{% endblock %}

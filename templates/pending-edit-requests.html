@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Edit Requests - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="bi bi-pencil-square"></i> Pending Edit Requests
+            <span class="badge bg-warning text-dark">{{ requests|length }}</span>
+        </h2>
+        
+        {% if requests %}
+        <div class="row">
+            {% for req in requests %}
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm {% if req.edit_level == 2 %}border-warning{% endif %}">
+                    <div class="card-header {% if req.edit_level == 2 %}bg-warning text-dark{% else %}bg-info text-white{% endif %}">
+                        <h6 class="mb-0">
+                            {% if req.edit_level == 2 %}<i class="bi bi-exclamation-triangle-fill"></i> SECOND EDIT {% endif %}
+                            <i class="bi bi-file-earmark-text"></i>
+                            {{ req.publication.title[:60] }}{% if req.publication.title|length > 60 %}...{% endif %}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if req.edit_level == 2 %}
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>SECOND EDIT REQUEST</strong><br>
+                            <small>If approved, this will be forwarded to Admin for final approval.</small>
+                        </div>
+                        {% endif %}
+                        <p><strong>Requested by:</strong> {{ req.faculty.name }}</p>
+                        <p><strong>Email:</strong> {{ req.faculty.email }}</p>
+                        <p><strong>Requested on:</strong> {{ (req.requested_at|to_ist).strftime('%b %d, %Y at %I:%M %p') }}</p>
+                        
+                        {% if req.reason %}
+                        <div class="alert alert-light mb-3">
+                            <strong>Reason:</strong><br>
+                            {{ req.reason }}
+                        </div>
+                        {% endif %}
+                        
+                        <p class="mb-2"><strong>Publication Details:</strong></p>
+                        <ul class="list-unstyled ms-3">
+                            <li><small><i class="bi bi-calendar"></i> Year: {{ req.publication.year }}</small></li>
+                            <li><small><i class="bi bi-journal"></i> {{ req.publication.journal_conference_name or 'N/A' }}</small></li>
+                            <li><small><i class="bi bi-lock"></i> Status: Confirmed (Locked)</small></li>
+                        </ul>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success" onclick="approveRequest({{ req.id }})">
+                                <i class="bi bi-check-circle"></i> Approve
+                            </button>
+                            <button class="btn btn-danger" onclick="denyRequest({{ req.id }})">
+                                <i class="bi bi-x-circle"></i> Deny
+                            </button>
+                            <a href="{{ url_for('view_publication', id=req.publication_id) }}" 
+                               class="btn btn-outline-primary" target="_blank">
+                                <i class="bi bi-eye"></i> View Publication
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-inbox"></i> No pending edit requests.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Approve Edit Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approveForm" method="POST">
+                <div class="modal-body">
+                    <p>Are you sure you want to approve this edit request?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Response (Optional):</label>
+                        <textarea class="form-control" name="response" rows="3" 
+                                  placeholder="Add a message for the faculty..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Approve
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Deny Modal -->
+<div class="modal fade" id="denyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Deny Edit Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="denyForm" method="POST">
+                <div class="modal-body">
+                    <p>Are you sure you want to deny this edit request?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Denial (Optional):</label>
+                        <textarea class="form-control" name="response" rows="3" 
+                                  placeholder="Explain why you're denying this request..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Deny
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
+let denyModal = new bootstrap.Modal(document.getElementById('denyModal'));
+
+function approveRequest(requestId) {
+    document.getElementById('approveForm').action = `/edit_requests/${requestId}/approve`;
+    approveModal.show();
+}
+
+function denyRequest(requestId) {
+    document.getElementById('denyForm').action = `/edit_requests/${requestId}/deny`;
+    denyModal.show();
+}
+
+// Auto-refresh for new edit requests
+let currentRequestCount = {{ requests|length }};
+setInterval(function() {
+    fetch('/api/check_edit_requests')
+        .then(response => response.json())
+        .then(data => {
+            if (data.pending_count !== undefined && data.pending_count !== currentRequestCount) {
+                console.log('Edit requests changed, reloading...');
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error checking edit requests:', error));
+}, 30000); // Check every 30 seconds
+</script>
+{% endblock %}

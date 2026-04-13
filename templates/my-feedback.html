@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}My Feedback - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-chat-left-text"></i> My Submitted Feedback
+            </h2>
+            <button class="btn btn-sjec-gold" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                <i class="bi bi-plus-circle"></i> Submit New Feedback
+            </button>
+        </div>
+        
+        {% if feedbacks %}
+        <div class="row">
+            {% for feedback in feedbacks %}
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm {% if feedback.status == 'resolved' %}border-success{% else %}border-warning{% endif %}">
+                    <div class="card-header {% if feedback.status == 'resolved' %}bg-success text-white{% else %}bg-warning text-dark{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="mb-0">
+                                {% if feedback.category == 'bug' %}
+                                    <i class="bi bi-bug"></i> Bug Report
+                                {% elif feedback.category == 'feature' %}
+                                    <i class="bi bi-lightbulb"></i> Feature Request
+                                {% elif feedback.category == 'content' %}
+                                    <i class="bi bi-file-text"></i> Content Issue
+                                {% else %}
+                                    <i class="bi bi-chat"></i> General Feedback
+                                {% endif %}
+                                - 
+                                {% if feedback.status == 'resolved' %}
+                                    <span class="badge bg-light text-success">Resolved</span>
+                                {% else %}
+                                    <span class="badge bg-light text-warning">Pending</span>
+                                {% endif %}
+                            </h6>
+                            <small>{{ (feedback.created_at|to_ist).strftime('%b %d, %Y') }}</small>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-primary">{{ feedback.subject }}</h6>
+                        
+                        <div class="mb-3">
+                            <strong>Sent to:</strong> 
+                            <span class="badge bg-info">{{ feedback.recipient_role.upper() }}</span>
+                        </div>
+                        
+                        <div class="alert alert-light mb-3">
+                            <strong>Your Message:</strong><br>
+                            {{ feedback.message }}
+                        </div>
+                        
+                        {% if feedback.screenshot_filename %}
+                        <p class="mb-3">
+                            <a href="{{ url_for('static', filename='uploads/' + feedback.screenshot_filename) }}" 
+                               target="_blank" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-image"></i> View Screenshot
+                            </a>
+                        </p>
+                        {% endif %}
+                        
+                        {% if feedback.status == 'resolved' %}
+                        <div class="alert alert-success mb-0">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-check-circle"></i> {{ feedback.recipient_role.upper() }}'s Response:
+                            </h6>
+                            <p class="mb-2">
+                                {{ feedback.resolution_comment if feedback.resolution_comment else 'Resolved without comment.' }}
+                            </p>
+                            <hr>
+                            <p class="mb-0 text-muted">
+                                <small>
+                                    <i class="bi bi-person"></i> Resolved by: {{ feedback.resolver.name }}<br>
+                                    <i class="bi bi-clock"></i> Resolved on: {{ (feedback.resolved_at|to_ist).strftime('%b %d, %Y at %I:%M %p') }}
+                                </small>
+                            </p>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-hourglass-split"></i> <strong>Status:</strong> Waiting for response from {{ feedback.recipient_role.upper() }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-inbox"></i> You haven't submitted any feedback yet.
+            <br><br>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                <i class="bi bi-plus-circle"></i> Submit Your First Feedback
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

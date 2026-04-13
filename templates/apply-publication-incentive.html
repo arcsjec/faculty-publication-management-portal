@@ -1,0 +1,653 @@
+{% extends 'base.html' %}
+
+{% block title %}Publication Incentive Application - SJEC{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h4 class="mb-0"><i class="bi bi-award"></i> Publication Incentive Application</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_application', app_id=form_data.id) if edit_mode else url_for('apply_publication_incentive') }}" enctype="multipart/form-data" id="incentiveForm">
+                        
+                        <!-- Application Header -->
+                        <div class="alert alert-info">
+                            <strong>ASSESSMENT OF QUALITY – APPLICATION FOR PUBLICATION INCENTIVES</strong>
+                        </div>
+                        
+                        <!-- 1. Name of Applicant -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">1. Name of the Applicant:</label>
+                            <input type="text" class="form-control" value="{{ current_user.name }}" readonly>
+                            <small class="text-muted">Pre-filled from your profile</small>
+                        </div>
+                        
+                        <!-- 2. Title of Publication -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">2. Title of the Publication: <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="title_of_paper" rows="2" required>{{ form_data.title_of_paper if form_data else '' }}</textarea>
+                        </div>
+                        
+                        <!-- 3. Application For -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">3. Application for:</label>
+                            <input type="text" class="form-control" value="Publication Incentive" readonly>
+                        </div>
+                        
+                        <!-- 4. Type of Publication -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">4. Type of Publication: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="is_national_international" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="National" {% if form_data and form_data.is_national_international == 'National' %}selected{% endif %}>National</option>
+                                <option value="International" {% if form_data and form_data.is_national_international == 'International' %}selected{% endif %}>International</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 5. Publication Category -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">5. Publication Category: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="publication_category" id="publicationCategory" required onchange="togglePublicationFields()">
+                                <option value="">-- Select Category --</option>
+                                <option value="Journal" {% if form_data and form_data.publication_category == 'Journal' %}selected{% endif %}>Journal</option>
+                                <option value="Book" {% if form_data and form_data.publication_category == 'Book' %}selected{% endif %}>Book</option>
+                                <option value="Book Chapter" {% if form_data and form_data.publication_category == 'Book Chapter' %}selected{% endif %}>Book Chapter</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Journal-specific fields (show/hide based on category) -->
+                        <div id="journalFields" style="display:none;">
+                        
+                        <!-- 6. Type of Journal (Journal only) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">6. Type of Journal: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="type_of_journal" id="typeOfJournal">
+                                <option value="">-- Select Type --</option>
+                                <option value="Peer-Reviewed" {% if form_data and form_data.type_of_journal == 'Peer-Reviewed' %}selected{% endif %}>Peer-Reviewed</option>
+                                <option value="Indexed" {% if form_data and form_data.type_of_journal == 'Indexed' %}selected{% endif %}>Indexed</option>
+                                <option value="Others" {% if form_data and form_data.type_of_journal == 'Others' %}selected{% endif %}>Others</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 7. Quartile -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">7. Quartile of the Journal (If any):</label>
+                            <select class="form-select" name="journal_quartile" id="journalQuartile">
+                                <option value="">-- Select Quartile --</option>
+                                <option value="Q1" {% if form_data and form_data.journal_quartile == 'Q1' %}selected{% endif %}>Q1</option>
+                                <option value="Q2" {% if form_data and form_data.journal_quartile == 'Q2' %}selected{% endif %}>Q2</option>
+                                <option value="Q3" {% if form_data and form_data.journal_quartile == 'Q3' %}selected{% endif %}>Q3</option>
+                                <option value="Q4" {% if form_data and form_data.journal_quartile == 'Q4' %}selected{% endif %}>Q4</option>
+                                <option value="Non-Quartile" {% if form_data and form_data.journal_quartile == 'Non-Quartile' %}selected{% endif %}>Non-Quartile</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 8. Impact Factor -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">8. Impact Factor of the Journal (If any):</label>
+                            <input type="number" class="form-control" name="journal_impact_factor" id="impactFactor" step="0.001" min="0" value="{{ form_data.journal_impact_factor if form_data and form_data.journal_impact_factor else '' }}">
+                        </div>
+                        
+                        <!-- 9. Type of Indexing -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">9. Type of Indexing: <span class="text-danger">*</span></label>
+                            <select class="form-select" name="indexing_type" id="indexingType">
+                                <option value="">-- Select Indexing --</option>
+                                <option value="Scopus" {% if form_data and form_data.indexing_type == 'Scopus' %}selected{% endif %}>Scopus</option>
+                                <option value="Web of Science" {% if form_data and form_data.indexing_type == 'Web of Science' %}selected{% endif %}>Web of Science</option>
+                                <option value="Others" {% if form_data and form_data.indexing_type == 'Others' %}selected{% endif %}>Others</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 10. Publisher Details (Journal) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">10. Publisher Details: <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="publisher_details" id="publisherDetails" rows="2">{{ form_data.publisher_details if form_data else '' }}</textarea>
+                        </div>
+                        
+                        <!-- 11. Author Type (Journal) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">11. Your Role as Author (Applicant): <span class="text-danger">*</span></label>
+                            <select class="form-select" name="author_type" id="authorType">
+                                <option value="">-- Select Author Type --</option>
+                                <option value="Author" {% if form_data and form_data.author_type == 'Author' %}selected{% endif %}>First Author</option>
+                                <option value="Corresponding Author" {% if form_data and form_data.author_type == 'Corresponding Author' %}selected{% endif %}>Corresponding Author</option>
+                                <option value="Co-Author" {% if form_data and form_data.author_type == 'Co-Author' %}selected{% endif %}>Co-Author</option>
+                            </select>
+                            <small class="text-muted">Select your role in this publication</small>
+                        </div>
+                        
+                        <!-- Author Counts (SJEC Staff Only) - Journal Publications Only -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> Count only SJEC staff members (including yourself). Enter 0 if that author role is from another institution.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Number of First Authors from SJEC: <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="num_first_authors_sjec" id="numFirstAuthors" min="0" max="1" value="{{ form_data.num_first_authors_sjec if form_data else 0 }}">
+                                <small class="text-muted">0 or 1</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Number of Corresponding Authors from SJEC: <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="num_corresponding_authors_sjec" id="numCorrAuthors" min="0" max="1" value="{{ form_data.num_corresponding_authors_sjec if form_data else 0 }}">
+                                <small class="text-muted">0 or 1</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label fw-bold">Number of Co-Authors from SJEC: <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="num_coauthors_sjec" id="numCoAuthors" min="0" max="10" value="{{ form_data.num_coauthors_sjec if form_data else 0 }}">
+                                <small class="text-muted">0 to 10</small>
+                            </div>
+                        </div>
+                        
+                        <!-- 12. Date of Publication (Journal) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">12. Date of Publication: <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="publication_date" id="publicationDateJournal" max="{{ now.strftime('%Y-%m-%d') }}" value="{{ form_data.publication_date.strftime('%Y-%m-%d') if form_data and form_data.publication_date else '' }}">
+                            <small class="text-muted text-danger">Future dates are not allowed</small>
+                        </div>
+                        
+                        </div><!-- End of journalFields -->
+                        
+                        <!-- Book/Book Chapter fields (show when category is Book or Book Chapter) -->
+                        <div id="bookFields" style="display:none;">
+                            
+                            <!-- 6. Publisher Details (Book/Book Chapter) -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">6. Publisher Details: <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="publisher_details_book" id="publisherDetailsBook" rows="2">{{ form_data.publisher_details if form_data else '' }}</textarea>
+                            </div>
+                            
+                            <!-- 7. Date of Publication (Book/Book Chapter) -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">7. Date of Publication: <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="publication_date_book" id="publicationDateBook" max="{{ now.strftime('%Y-%m-%d') }}" value="{{ form_data.publication_date.strftime('%Y-%m-%d') if form_data and form_data.publication_date else '' }}">
+                                <small class="text-muted text-danger">Future dates are not allowed</small>
+                            </div>
+                            
+                        </div><!-- End of bookFields -->
+                        
+                        <!-- Supporting Documents - Dynamic numbering -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold"><span id="docNumber">13</span>. Supporting Documents: <span class="text-danger">*</span></label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <p class="text-muted small mb-3">
+                                        <i class="bi bi-info-circle"></i> Upload supporting documents such as:
+                                        publication PDF, acceptance letter, copyright certificate, journal indexing proof, etc.
+                                        <br><strong>Accepted formats:</strong> PDF, PNG, JPEG, Word (.docx)
+                                        <br><strong>Maximum file size:</strong> 5MB per file
+                                        <br><strong>Note:</strong> At least one document (preferably publication PDF) is required
+                                    </p>
+                                    
+                                    {% if edit_mode and form_data.documents %}
+                                    <div class="mb-3">
+                                        <h6 class="text-primary">Uploaded Documents:</h6>
+                                        <div class="list-group">
+                                            {% for doc in form_data.documents %}
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="bi bi-file-earmark-{{ 'pdf' if doc.file_type == 'pdf' else 'image' if doc.file_type in ['png', 'jpeg', 'jpg'] else 'word' }} text-primary"></i>
+                                                    <strong>{{ doc.filename }}</strong>
+                                                    <small class="text-muted">({{ (doc.file_size / 1024) | round(2) }} KB)</small>
+                                                    {% if doc.document_type %}
+                                                    <span class="badge bg-secondary">{{ doc.document_type }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{{ url_for('download_application_document', doc_id=doc.id) }}" class="btn btn-outline-primary" target="_blank">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger" onclick="deleteDocument({{ doc.id }})">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        <label for="documents" class="form-label">Upload New Documents:</label>
+                                        <input type="file" class="form-control" name="documents" id="documents" 
+                                               accept=".pdf,.png,.jpg,.jpeg,.docx" multiple {% if not edit_mode or not form_data.documents %}required{% endif %}>
+                                        <small class="text-muted">Hold Ctrl/Cmd to select multiple files</small>
+                                    </div>
+                                    
+                                    <div id="fileList" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Signature Section - Dynamic numbering -->
+                        <div class="mb-4 p-3 border rounded bg-light">
+                            <label class="form-label fw-bold"><span id="signNumber">14</span>. Signature of the Applicant:</label>
+                            <div class="d-flex align-items-center gap-3">
+                                {% if current_user.signature %}
+                                    <img src="{{ url_for('user_signature', user_id=current_user.id) }}" 
+                                         alt="Your Signature" 
+                                         style="max-width: 120px; max-height: 50px; background: white; padding: 3px;">
+                                    <div>
+                                        <p class="mb-0"><strong>Signature on file</strong></p>
+                                        <small class="text-muted">Will be automatically included in the form</small>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning mb-0">
+                                        <i class="bi bi-exclamation-triangle"></i> 
+                                        <strong>No signature uploaded!</strong> 
+                                        Please upload your signature in 
+                                        <a href="{{ url_for('profile') }}" target="_blank">My Profile</a> before submitting.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block mt-2">Date: <strong>{{ now.strftime('%d-%m-%Y') }}</strong> (Auto-filled)</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('my_applications') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <div>
+                                <button type="submit" name="action" value="draft" class="btn btn-warning me-2">
+                                    <i class="bi bi-save"></i> Save as Draft
+                                </button>
+                                <button type="button" class="btn btn-info me-2" onclick="previewForm()">
+                                    <i class="bi bi-eye"></i> Preview
+                                </button>
+                                <button type="submit" name="action" value="submit" class="btn btn-success" {{ 'disabled' if not current_user.signature else '' }}>
+                                    <i class="bi bi-send"></i> Submit Application
+                                </button>
+                            </div>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-sjec-navy text-white">
+                <h5 class="modal-title"><i class="bi bi-printer"></i> Form Preview - Publication Incentive</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent" style="padding: 40px;">
+                <!-- Preview will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printPreview()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewForm() {
+    // Detect PDF/documents from available inputs and existing uploaded documents
+    let pdfFileName = null;
+    let pdfFileList = [];
+
+    // 1) Check the 'documents' multi-file input
+    const docsInput = document.getElementById('documents');
+    if (docsInput && docsInput.files && docsInput.files.length > 0) {
+        // Collect all selected file names
+        for (const f of docsInput.files) {
+            pdfFileList.push(f.name);
+            // Prefer first PDF among selected files
+            if (!pdfFileName && (f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf')) {
+                pdfFileName = f.name;
+            }
+        }
+        // If no PDF found, use the first selected file name
+        if (!pdfFileName && pdfFileList.length > 0) pdfFileName = pdfFileList[0];
+    }
+
+    // 2) If still not found, check server-side existing uploaded documents (edit mode)
+    const existingDocs = [
+        {% if edit_mode and form_data.documents %}
+            {% for doc in form_data.documents %}
+                {
+                    "filename": "{{ doc.filename }}",
+                    "file_type": "{{ doc.file_type }}",
+                    "url": "{{ url_for('download_application_document', doc_id=doc.id) }}?view=1"
+                }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        {% endif %}
+    ];
+
+    if ((!pdfFileName || pdfFileList.length === 0) && existingDocs.length > 0) {
+        const found = existingDocs.find(d => (d.file_type && d.file_type.toLowerCase() === 'pdf') || (d.filename && d.filename.toLowerCase().endsWith('.pdf')));
+        if (found) pdfFileName = found.filename;
+        else pdfFileName = existingDocs[0].filename;
+        
+        // Add existing docs to list
+        existingDocs.forEach(d => pdfFileList.push(d.filename));
+    }
+
+    // Get publication category to determine which fields to read
+    const publicationCategoryElem = document.querySelector('[name="publication_category"]');
+    const publicationCategory = publicationCategoryElem ? publicationCategoryElem.value : '';
+    const isJournal = (publicationCategory === 'Journal');
+    
+    // Get is_national_international (always visible, field #4)
+    const nationalIntlElem = document.querySelector('[name="is_national_international"]');
+    const isNationalInternational = nationalIntlElem ? nationalIntlElem.value : '';
+    
+    const formData = {
+        applicant_name: "{{ current_user.name }}",
+        title_of_paper: document.querySelector('[name="title_of_paper"]')?.value || '',
+        publication_category: publicationCategory,
+        is_national_international: isNationalInternational,
+        // Journal-specific fields (only read if Journal category)
+        type_of_journal: '',
+        journal_quartile: '',
+        journal_impact_factor: '',
+        indexing_type: '',
+        publisher_details: '',
+        author_type: '',
+        num_first_authors_sjec: '0',
+        num_corresponding_authors_sjec: '0',
+        num_coauthors_sjec: '0',
+        publication_date: '',
+        publication_pdf_name: pdfFileName,
+        publication_docs_list: pdfFileList,
+        date: "{{ now.strftime('%d-%m-%Y') }}",
+        has_signature: {{ 'true' if current_user.signature else 'false' }}
+    };
+    
+    // Populate fields based on category
+    if (isJournal) {
+        formData.type_of_journal = document.querySelector('[name="type_of_journal"]')?.value || '';
+        formData.journal_quartile = document.querySelector('[name="journal_quartile"]')?.value || '';
+        formData.journal_impact_factor = document.querySelector('[name="journal_impact_factor"]')?.value || '';
+        formData.indexing_type = document.querySelector('[name="indexing_type"]')?.value || '';
+        formData.publisher_details = document.querySelector('[name="publisher_details"]')?.value || '';
+        formData.author_type = document.querySelector('[name="author_type"]')?.value || '';
+        formData.num_first_authors_sjec = document.querySelector('[name="num_first_authors_sjec"]')?.value || '0';
+        formData.num_corresponding_authors_sjec = document.querySelector('[name="num_corresponding_authors_sjec"]')?.value || '0';
+        formData.num_coauthors_sjec = document.querySelector('[name="num_coauthors_sjec"]')?.value || '0';
+        formData.publication_date = document.querySelector('[name="publication_date"]')?.value || '';
+    } else {
+        formData.publisher_details = document.querySelector('[name="publisher_details_book"]')?.value || '';
+        formData.publication_date = document.querySelector('[name="publication_date_book"]')?.value || '';
+    }
+    
+    // Build documents list HTML
+    let docsListHtml = '';
+    if (formData.publication_docs_list.length > 0) {
+        docsListHtml = '<ul class="mb-0">';
+        formData.publication_docs_list.forEach(fname => {
+            docsListHtml += `<li>${fname}</li>`;
+        });
+        docsListHtml += '</ul>';
+    } else {
+        docsListHtml = '<em>No files selected</em>';
+    }
+    
+    // Build preview content based on publication category
+    let journalFieldsHtml = '';
+    let docsNumber = 13;
+    let signNumber = 14;
+    
+    if (isJournal) {
+        journalFieldsHtml = `
+            <p><strong>6. Type of Journal:</strong> ${formData.type_of_journal || '<em>Not selected</em>'}</p>
+            <p><strong>7. Quartile of the Journal (If any):</strong> ${formData.journal_quartile || 'N/A'}</p>
+            <p><strong>8. Impact Factor of the Journal (If any):</strong> ${formData.journal_impact_factor || 'N/A'}</p>
+            <p><strong>9. Type of Indexing:</strong> ${formData.indexing_type || '<em>Not selected</em>'}</p>
+            <p><strong>10. Publisher Details:</strong><br>${formData.publisher_details || '<em>Not filled</em>'}</p>
+            <p><strong>11. Author Type:</strong> ${formData.author_type || '<em>Not selected</em>'}</p>
+            <p><strong>12. Date of Publication:</strong> ${formData.publication_date || '<em>Not filled</em>'}</p>`;
+        docsNumber = 13;
+        signNumber = 14;
+    } else {
+        journalFieldsHtml = `
+            <p><strong>6. Publisher Details:</strong><br>${formData.publisher_details || '<em>Not filled</em>'}</p>
+            <p><strong>7. Date of Publication:</strong> ${formData.publication_date || '<em>Not filled</em>'}</p>`;
+        docsNumber = 8;
+        signNumber = 9;
+    }
+    
+    const preview = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h5 style="text-align: center; font-weight: bold;">ASSESSMENT OF QUALITY – APPLICATION FOR PUBLICATION INCENTIVES</h5>
+            <hr>
+            
+            <p><strong>1. Name of the Applicant:</strong> ${formData.applicant_name}</p>
+            <p><strong>2. Title of the Publication:</strong><br>${formData.title_of_paper || '<em>Not filled</em>'}</p>
+            <p><strong>3. Application for:</strong> Publication Incentive</p>
+            <p><strong>4. Type of Publication:</strong> ${formData.is_national_international || '<em>Not selected</em>'}</p>
+            <p><strong>5. Publication Category:</strong> ${formData.publication_category || '<em>Not selected</em>'}</p>
+            ${journalFieldsHtml}
+            <p><strong>${docsNumber}. Supporting Documents:</strong><br>${docsListHtml}</p>
+            
+            <div style="margin-top: 30px;">
+                <p><strong>${signNumber}. Signature of the Applicant:</strong></p>
+                ${formData.has_signature ? 
+                    '<img src="{{ url_for("user_signature", user_id=current_user.id) }}" style="max-width: 120px; max-height: 50px; background: white; padding: 3px;">' : 
+                    '<em style="color: red;">No signature uploaded</em>'}
+                <p>Date: ${formData.date}</p>
+            </div>
+            
+            <hr style="margin-top: 40px;">
+            <h6><strong>Assessment Committee Proceedings</strong></h6>
+            <p>Publication Incentive Applicable: <strong>___________</strong></p>
+            <p>Comments, if any: ______________________________________</p>
+            
+            <div style="margin-top: 30px;">
+                <p><strong>Signatures of Assessment Committee Members:</strong></p>
+                <p>____________________ (Name: ___________)</p>
+                <p>____________________ (Name: ___________)</p>
+                <p>____________________ (Name: ___________)</p>
+                <p>Date: ___________</p>
+            </div>
+            
+            <hr style="margin-top: 40px;">
+            <h6><strong>Dean of R&D Recommendation</strong></h6>
+            <p><strong>Recommended Publication Incentive for Journal Article:</strong></p>
+            <p>First Author (Rs): __________</p>
+            <p>Corresponding Author (Rs): __________</p>
+            <p>Co-Author/s (each, Rs): __________</p>
+            <p>Dean – R&D Signature: __________________</p>
+            
+            <hr style="margin-top: 40px;">
+            <h6><strong>Approval Section</strong></h6>
+            <p>Principal: ___________________</p>
+            <p>Director: ___________________</p>
+        </div>
+    `;
+    
+    document.getElementById('previewContent').innerHTML = preview;
+
+    const modalEl = document.getElementById('previewModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+function printPreview() {
+    const content = document.getElementById('previewContent').innerHTML;
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Publication Incentive Application</title>
+            <style>
+                @page { size: A4; margin: 2cm; }
+                body { font-family: Arial, sans-serif; line-height: 1.6; }
+                @media print {
+                    body { margin: 0; }
+                }
+            </style>
+        </head>
+        <body>
+            ${content}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// File upload preview
+document.getElementById('documents')?.addEventListener('change', function(e) {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    
+    if (this.files.length > 0) {
+        const listDiv = document.createElement('div');
+        listDiv.className = 'alert alert-info';
+        listDiv.innerHTML = '<strong>Selected files:</strong><ul class="mb-0 mt-2">';
+        
+        Array.from(this.files).forEach(file => {
+            const fileSize = (file.size / 1024).toFixed(2);
+            const fileIcon = file.type.includes('pdf') ? 'file-earmark-pdf' : 
+                           file.type.includes('image') ? 'file-earmark-image' : 
+                           'file-earmark-word';
+            listDiv.innerHTML += `<li><i class="bi bi-${fileIcon}"></i> ${file.name} (${fileSize} KB)</li>`;
+        });
+        
+        listDiv.innerHTML += '</ul>';
+        fileList.appendChild(listDiv);
+    }
+});
+
+function deleteDocument(docId) {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    fetch(`/application/document/${docId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting document: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Error deleting document');
+        console.error('Error:', error);
+    });
+}
+
+
+// Toggle fields based on publication category
+function togglePublicationFields() {
+    const category = document.getElementById('publicationCategory').value;
+    const journalFields = document.getElementById('journalFields');
+    const bookFields = document.getElementById('bookFields');
+    const docNumber = document.getElementById('docNumber');
+    const signNumber = document.getElementById('signNumber');
+    
+    if (category === 'Journal') {
+        // Show journal fields, hide book fields
+        journalFields.style.display = 'block';
+        bookFields.style.display = 'none';
+        
+        // Update field numbering for Journal (13. Docs, 14. Sign)
+        docNumber.textContent = '13';
+        signNumber.textContent = '14';
+        
+        // Make journal fields required
+        document.getElementById('typeOfJournal').required = true;
+        document.getElementById('indexingType').required = true;
+        document.getElementById('publisherDetails').required = true;
+        document.getElementById('authorType').required = true;
+        document.getElementById('numFirstAuthors').required = true;
+        document.getElementById('numCorrAuthors').required = true;
+        document.getElementById('numCoAuthors').required = true;
+        document.getElementById('publicationDateJournal').required = true;
+        
+        // Remove required from book fields
+        document.getElementById('publisherDetailsBook').required = false;
+        document.getElementById('publicationDateBook').required = false;
+        
+    } else if (category === 'Book' || category === 'Book Chapter') {
+        // Show book fields, hide journal fields
+        journalFields.style.display = 'none';
+        bookFields.style.display = 'block';
+        
+        // Update field numbering for Book/Book Chapter (8. Docs, 9. Sign)
+        docNumber.textContent = '8';
+        signNumber.textContent = '9';
+        
+        // Make book fields required
+        document.getElementById('publisherDetailsBook').required = true;
+        document.getElementById('publicationDateBook').required = true;
+        
+        // Remove required from journal fields
+        document.getElementById('typeOfJournal').required = false;
+        document.getElementById('indexingType').required = false;
+        document.getElementById('publisherDetails').required = false;
+        document.getElementById('authorType').required = false;
+        document.getElementById('numFirstAuthors').required = false;
+        document.getElementById('numCorrAuthors').required = false;
+        document.getElementById('numCoAuthors').required = false;
+        document.getElementById('publicationDateJournal').required = false;
+        
+    } else {
+        // Hide all category-specific fields
+        journalFields.style.display = 'none';
+        bookFields.style.display = 'none';
+        docNumber.textContent = '6';
+        signNumber.textContent = '7';
+        
+        // Remove required from all hidden fields
+        document.getElementById('typeOfJournal').required = false;
+        document.getElementById('indexingType').required = false;
+        document.getElementById('publisherDetails').required = false;
+        document.getElementById('authorType').required = false;
+        document.getElementById('numFirstAuthors').required = false;
+        document.getElementById('numCorrAuthors').required = false;
+        document.getElementById('numCoAuthors').required = false;
+        document.getElementById('publicationDateJournal').required = false;
+        document.getElementById('publisherDetailsBook').required = false;
+        document.getElementById('publicationDateBook').required = false;
+    }
+}
+
+// Handle form submission - remove validation for draft saves
+document.getElementById('incentiveForm').addEventListener('submit', function(e) {
+    const actionButton = document.activeElement;
+    const isDraft = actionButton && actionButton.value === 'draft';
+    
+    if (isDraft) {
+        // Remove required attribute from all fields when saving as draft
+        const requiredFields = this.querySelectorAll('[required]');
+        requiredFields.forEach(field => {
+            field.removeAttribute('required');
+        });
+    } else {
+        // Ensure proper required fields are set for submission
+        togglePublicationFields();
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    togglePublicationFields();
+});
+</script>
+{% endblock %}
+

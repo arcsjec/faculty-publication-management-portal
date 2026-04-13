@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Publication - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+.required-field::after {
+    content: " *";
+    color: red;
+    font-weight: bold;
+}
+.publication-type-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid #dee2e6;
+}
+.publication-type-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.publication-type-card.selected {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+}
+.publication-type-card.selected .card-title {
+    color: #0d6efd;
+}
+.journal-only, .book-only {
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <!-- Duplicate Warning Alert -->
+        {% if show_duplicate_warning and duplicates %}
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Potential Duplicates Found!</h5>
+            <p>We found {{ duplicates|length }} similar publication(s) already in the database:</p>
+            <hr>
+            {% for pub, similarity in duplicates %}
+            <div class="mb-2">
+                <strong>{{ similarity }}% Match:</strong> {{ pub.title }}<br>
+                <small class="text-muted">
+                    {{ pub.year }} | {{ pub.journal_conference_name or 'N/A' }} | 
+                    Added by: {{ pub.author.name }} ({{ pub.author.department.name if pub.author.department else 'N/A' }})
+                    {% if pub.doi %} | DOI: {{ pub.doi }}{% endif %}
+                </small>
+                <a href="{{ url_for('view_publication', id=pub.id) }}" class="btn btn-sm btn-outline-info ms-2" target="_blank">
+                    <i class="bi bi-eye"></i> View
+                </a>
+            </div>
+            <hr class="my-2">
+            {% endfor %}
+            <div class="mt-3">
+                <p class="mb-2"><strong>What would you like to do?</strong></p>
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                    <i class="bi bi-arrow-left"></i> Go Back & Edit
+                </button>
+                <button type="button" class="btn btn-warning" onclick="proceedAnyway()">
+                    <i class="bi bi-check-circle"></i> Proceed Anyway (This is Different)
+                </button>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        
+        <div class="card shadow-sm">
+            <div class="card-header bg-sjec-navy text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Add New Publication</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" id="publicationForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Hidden field for duplicate override -->
+                    <input type="hidden" name="ignore_duplicates" id="ignoreDuplicates" value="">
+                    
+                    <!-- PUBLICATION TYPE SELECTOR -->
+                    <div class="mb-4">
+                        <h5 class="mb-3 text-sjec-navy"><i class="bi bi-filter-circle"></i> Select Publication Type</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card publication-type-card" id="type-journal" onclick="selectPublicationType('Journal')">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-journal-text fs-1 text-primary"></i>
+                                        <h5 class="card-title mt-2">Journal Article</h5>
+                                        <p class="card-text small text-muted">Research papers published in academic journals</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card publication-type-card" id="type-book" onclick="selectPublicationType('Book')">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-book fs-1 text-success"></i>
+                                        <h5 class="card-title mt-2">Book</h5>
+                                        <p class="card-text small text-muted">Complete books authored or co-authored</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card publication-type-card" id="type-bookchapter" onclick="selectPublicationType('Book Chapter')">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-bookmark fs-1 text-warning"></i>
+                                        <h5 class="card-title mt-2">Book Chapter</h5>
+                                        <p class="card-text small text-muted">Chapters in edited books or collections</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{ form.publication_type(class="d-none", id="publicationType") }}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3 text-sjec-navy">Basic Information</h5>
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label fw-bold required-field") }}
+                        {{ form.title(class="form-control" ~ (" is-invalid" if form.title.errors else "")) }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.title.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.abstract.label(class="form-label fw-bold") }}
+                        {{ form.abstract(class="form-control", rows="4") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.authors_names.label(class="form-label fw-bold required-field") }}
+                        {{ form.authors_names(class="form-control" ~ (" is-invalid" if form.authors_names.errors else ""), rows="2") }}
+                        <div class="form-text">Enter author names separated by commas</div>
+                        {% if form.authors_names.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.authors_names.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-sjec-navy">Publication Details</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3 journal-only">
+                            {{ form.journal_conference_name.label(class="form-label fw-bold") }}
+                            {{ form.journal_conference_name(class="form-control") }}
+                            <div class="form-text">Name of the journal or conference</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.publisher_name.label(class="form-label fw-bold") }}
+                            {{ form.publisher_name(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Book-specific fields -->
+                    <div class="row book-only">
+                        <div class="col-md-6 mb-3">
+                            {{ form.isbn.label(class="form-label fw-bold") }}
+                            {{ form.isbn(class="form-control", placeholder="ISBN-13 or ISBN-10") }}
+                            <div class="form-text">International Standard Book Number</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.edition.label(class="form-label fw-bold") }}
+                            {{ form.edition(class="form-control", placeholder="e.g., 1st, 2nd, Revised") }}
+                        </div>
+                    </div>
+                    
+                    <!-- Journal-specific fields -->
+                    <div class="row journal-only">
+                        <div class="col-md-4 mb-3">
+                            {{ form.volume.label(class="form-label fw-bold") }}
+                            {{ form.volume(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.issue.label(class="form-label fw-bold") }}
+                            {{ form.issue(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.pages.label(class="form-label fw-bold") }}
+                            {{ form.pages(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.year.label(class="form-label fw-bold required-field") }}
+                            {{ form.year(class="form-control" ~ (" is-invalid" if form.year.errors else "")) }}
+                            {% if form.year.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.year.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.month.label(class="form-label fw-bold") }}
+                            {{ form.month(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.doi.label(class="form-label fw-bold") }}
+                            {{ form.doi(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-sjec-navy journal-only">Indexing & Impact (Journal Only)</h5>
+                    
+                    <div class="row journal-only">
+                        <div class="col-md-4 mb-3">
+                            {{ form.indexing_status.label(class="form-label fw-bold") }}
+                            {{ form.indexing_status(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.quartile.label(class="form-label fw-bold") }}
+                            {{ form.quartile(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.impact_factor.label(class="form-label fw-bold") }}
+                            {{ form.impact_factor(class="form-control", step="0.001") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 journal-only">
+                        {{ form.citation_count.label(class="form-label fw-bold") }}
+                        {{ form.citation_count(class="form-control", min="0") }}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> Enter current citation count. This will be automatically updated quarterly via Google Scholar.
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-sjec-navy">Additional Information</h5>
+                    
+                    <div class="mb-3">
+                        {{ form.bibtex_entry.label(class="form-label fw-bold") }}
+                        {{ form.bibtex_entry(class="form-control" ~ (" is-invalid" if form.bibtex_entry.errors else ""), rows="5") }}
+                        <div class="form-text">Must start with @article, @book, @inproceedings etc. and end with }} <br>Example: @article{key2024, author={Name}, title={Title}, year={2024}}</div>
+                        {% if form.bibtex_entry.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.bibtex_entry.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.pdf_file.label(class="form-label fw-bold") }}
+                        {{ form.pdf_file(class="form-control") }}
+                        <div class="form-text">Upload PDF file (Maximum size: 25 MB)</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" name="action" value="save" class="btn btn-info">
+                            <i class="bi bi-save"></i> Save as Draft
+                        </button>
+                        <button type="submit" name="action" value="confirm" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Save & Confirm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-3">
+    <h6><i class="bi bi-info-circle"></i> Note:</h6>
+    <ul class="mb-0">
+        <li><strong>Save as Draft:</strong> You can edit this publication anytime until you confirm it.</li>
+        <li><strong>Save & Confirm:</strong> The publication will be locked and you cannot edit it unless your HoD grants permission.</li>
+        <li><strong>BibTeX Format:</strong> Must be @article{...}}, @book{...}}, @inproceedings{...}} etc. with double closing braces }}</li>
+    </ul>
+</div>
+
+<script>
+function proceedAnyway() {
+    // Set the ignore duplicates flag and submit the form
+    document.getElementById('ignoreDuplicates').value = '1';
+    document.getElementById('publicationForm').submit();
+}
+
+function selectPublicationType(type) {
+    // Remove selected class from all cards
+    document.querySelectorAll('.publication-type-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked card
+    const cardId = 'type-' + type.toLowerCase().replace(' ', '');
+    document.getElementById(cardId).classList.add('selected');
+    
+    // Set the hidden field value
+    document.getElementById('publicationType').value = type;
+    
+    // Show/hide fields based on publication type
+    const journalFields = document.querySelectorAll('.journal-only');
+    const bookFields = document.querySelectorAll('.book-only');
+    
+    if (type === 'Journal') {
+        journalFields.forEach(field => field.style.display = 'block');
+        bookFields.forEach(field => field.style.display = 'none');
+    } else {
+        // Book or Book Chapter
+        journalFields.forEach(field => field.style.display = 'none');
+        bookFields.forEach(field => field.style.display = 'block');
+    }
+}
+
+// On page load, select Journal by default if nothing is selected
+document.addEventListener('DOMContentLoaded', function() {
+    const pubTypeValue = document.getElementById('publicationType').value;
+    if (!pubTypeValue) {
+        selectPublicationType('Journal');
+    } else {
+        selectPublicationType(pubTypeValue);
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Database Management - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        margin: 0;
+        font-weight: bold;
+    }
+    
+    .stat-card p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    .table-stats {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .backup-item {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+    
+    .backup-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .action-btn {
+        margin: 0.25rem;
+    }
+    
+    .warning-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+    
+    .success-box {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-database"></i> Database Management</h2>
+            <p class="text-muted">Optimize database performance, create backups, and view statistics</p>
+        </div>
+    </div>
+
+    <!-- Database Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <p>Database Size</p>
+                <h3>{{ "%.2f"|format(db_size_mb) }} MB</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <p>Total Records</p>
+                <h3>{{ stats.values()|sum|default(0)|int|format_number }}</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <p>Total Backups</p>
+                <h3>{{ backups|length }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-tools"></i> Database Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="warning-box">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Important:</strong> Database optimization and backup operations may take a few seconds. Do not close this page during operations.
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('admin_database_optimize') }}" class="d-inline">
+                        <button type="submit" class="btn btn-success action-btn" onclick="return confirm('This will create database indexes and optimize query performance. Continue?')">
+                            <i class="bi bi-lightning"></i> Optimize Database
+                        </button>
+                    </form>
+                    
+                    <form method="POST" action="{{ url_for('admin_database_backup') }}" class="d-inline">
+                        <button type="submit" class="btn btn-primary action-btn">
+                            <i class="bi bi-file-earmark-zip"></i> Create Backup Now
+                        </button>
+                    </form>
+                    
+                    <button type="button" class="btn btn-info action-btn" data-bs-toggle="modal" data-bs-target="#scheduledBackupModal">
+                        <i class="bi bi-calendar-check"></i> Setup Scheduled Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm table-stats">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Database Table Statistics</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Table Name</th>
+                                    <th class="text-end">Record Count</th>
+                                    <th>Purpose</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set table_info = {
+                                    'users': 'User accounts and profiles',
+                                    'departments': 'Department information',
+                                    'publications': 'Faculty publications',
+                                    'notifications': 'User notifications',
+                                    'application_forms': 'Incentive and support applications',
+                                    'edit_requests': 'Publication edit requests',
+                                    'feedbacks': 'User feedback submissions',
+                                    'acm_panel': 'ACM panel members',
+                                    'acm_reviews': 'ACM review submissions',
+                                    'audit_logs': 'System activity logs',
+                                    'circulars': 'College circulars and announcements',
+                                    'wallet_transactions': 'Financial transactions',
+                                    'circular_reads': 'Circular read tracking',
+                                    'application_documents': 'Application supporting documents'
+                                } %}
+                                
+                                {% for table, count in stats.items()|sort %}
+                                <tr>
+                                    <td><code>{{ table }}</code></td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary">{{ "{:,}".format(count) }}</span>
+                                    </td>
+                                    <td class="text-muted">{{ table_info.get(table, 'System data') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <th>TOTAL</th>
+                                    <th class="text-end">
+                                        <span class="badge bg-success">{{ "{:,}".format(stats.values()|sum|default(0)|int) }}</span>
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Management -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-archive"></i> Backup Management</h5>
+                </div>
+                <div class="card-body">
+                    {% if backups %}
+                        <p class="text-muted">Available database backups (most recent first):</p>
+                        
+                        {% for backup in backups %}
+                        <div class="backup-item">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <strong><i class="bi bi-file-earmark-zip"></i> {{ backup.filename }}</strong>
+                                </div>
+                                <div class="col-md-3 text-muted">
+                                    <small>
+                                        <i class="bi bi-clock"></i> {{ backup.modified }}<br>
+                                        <i class="bi bi-hdd"></i> {{ "%.2f"|format(backup.size_mb) }} MB
+                                    </small>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <a href="{{ url_for('admin_download_backup', filename=backup.filename) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No backups found. Create your first backup using the button above.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Best Practices -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Best Practices</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Database Optimization:</h6>
+                    <ul>
+                        <li>Run optimization monthly or when database performance degrades</li>
+                        <li>Optimization creates indexes on frequently queried fields for faster searches</li>
+                        <li>Updates database statistics for better query planning</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Backup Strategy:</h6>
+                    <ul>
+                        <li><strong>Daily backups:</strong> Use the scheduled backup feature (Windows Task Scheduler)</li>
+                        <li><strong>Before major changes:</strong> Always create a manual backup</li>
+                        <li><strong>Retention:</strong> Keep at least 30 days of backups</li>
+                        <li><strong>Storage:</strong> Store backups in a separate location for safety</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Recovery:</h6>
+                    <ul>
+                        <li>To restore from backup, download the backup file</li>
+                        <li>Stop the application</li>
+                        <li>Replace <code>instance/faculty_publications.db</code> with the backup file</li>
+                        <li>Restart the application</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scheduled Backup Modal -->
+<div class="modal fade" id="scheduledBackupModal" tabindex="-1" aria-labelledby="scheduledBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="scheduledBackupModalLabel"><i class="bi bi-calendar-check"></i> Setup Scheduled Backup</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="success-box">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Automated Backup Script Ready!</strong> Follow the steps below to enable daily backups.
+                </div>
+                
+                <h6>Windows Task Scheduler Setup:</h6>
+                <ol>
+                    <li>Open <strong>Task Scheduler</strong> (search in Windows Start menu)</li>
+                    <li>Click <strong>"Create Basic Task"</strong> in the right panel</li>
+                    <li>Name: <code>SJEC Publication Portal Daily Backup</code></li>
+                    <li>Trigger: <strong>Daily</strong> at a time when portal usage is low (e.g., 2:00 AM)</li>
+                    <li>Action: <strong>Start a program</strong></li>
+                    <li>Program/script: Browse and select <code>run_backup.bat</code> from the portal folder</li>
+                    <li>Start in: Enter the full path to the portal folder (e.g., <code>C:\path\to\portal</code>)</li>
+                    <li>Click <strong>Finish</strong></li>
+                </ol>
+                
+                <h6 class="mt-3">Manual Backup (Alternative):</h6>
+                <p>Run <code>run_backup.bat</code> manually anytime to create a backup and clean old backups.</p>
+                
+                <div class="code-block mt-3">
+                    <strong>Script Location:</strong><br>
+                    <code>{{ request.root_path }}\run_backup.bat</code>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

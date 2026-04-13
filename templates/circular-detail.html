@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{{ circular.title }} - Circular{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{{ url_for('view_circulars') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Circulars
+                </a>
+            </div>
+
+            <!-- Circular Card -->
+            <div class="card shadow-lg">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3 class="mb-0"><i class="bi bi-megaphone-fill"></i> {{ circular.title }}</h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Subject -->
+                    {% if circular.subject and circular.subject.strip() %}
+                    <div class="mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-chat-square-text fs-4 text-primary me-3 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="text-muted mb-2">Subject</h5>
+                                <p class="fs-5 mb-0">{{ circular.subject }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    {% endif %}
+
+                    <!-- Body Content -->
+                    {% if circular.body and circular.body.strip() %}
+                    <div class="circular-body mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-file-text fs-4 text-success me-3 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="text-muted mb-3">Details</h5>
+                                <div class="content-box">
+                                    <p style="white-space: pre-wrap; line-height: 1.8; font-size: 1.05rem;">{{ circular.body }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    {% endif %}
+
+                    <!-- Attachment Section -->
+                    {% if circular.file_path %}
+                    <div class="attachment-section">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-paperclip fs-4 text-info me-3 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="text-muted mb-3">Attachment</h5>
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body bg-light">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger"></i>
+                                                <span class="ms-3">{{ circular.title }}.{{ circular.file_type }}</span>
+                                            </div>
+                                            <div>
+                                                <a href="{{ url_for('download_circular', circular_id=circular.id) }}" 
+                                                   class="btn btn-success">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-muted text-center bg-light">
+                    <small><i class="bi bi-calendar3"></i> Published on {{ circular.created_at.strftime('%d %B %Y at %I:%M %p') }}</small>
+                </div>
+            </div>
+
+            <!-- Actions (for Dean) -->
+            {% if current_user.is_authenticated and current_user.role == 'dean' %}
+            <div class="mt-3 text-end">
+                <form method="POST" action="{{ url_for('delete_circular', circular_id=circular.id) }}" 
+                      class="d-inline"
+                      onsubmit="return confirm('Are you sure you want to remove this circular? This action cannot be undone.');">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Remove Circular
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.circular-body {
+    background-color: #ffffff;
+}
+
+.content-box {
+    background-color: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.attachment-section .card {
+    transition: transform 0.2s;
+}
+
+.attachment-section .card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header h3 {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.card-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 0.75rem 1.25rem;
+}
+</style>
+
+{% endblock %}

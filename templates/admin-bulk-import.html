@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Import - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="bi bi-upload"></i> Bulk Import Publications</h2>
+            <p class="text-muted">Upload an Excel file to import multiple publications at once</p>
+            {% if current_user.role == 'hod' %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> <strong>Note:</strong> As HoD, you can only import publications for faculty in your department ({{ current_user.department.name }}).
+            </div>
+            {% elif current_user.role == 'faculty' %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> <strong>Note:</strong> As Faculty, you can only import publications for your own email ({{ current_user.email }}). Any row with a different email will be rejected.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Upload Excel File</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="excel_file" class="form-label">Select Excel File (.xlsx or .xls)</label>
+                            <input type="file" class="form-control" id="excel_file" name="excel_file" 
+                                   accept=".xlsx,.xls" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Upload & Import
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Instructions</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Excel File Format:</h6>
+                    <p>Your Excel file must have the following columns:</p>
+                    <ul>
+                        <li><strong>faculty_email</strong> (required) - Email of the faculty member</li>
+                        <li><strong>title</strong> (required) - Publication title</li>
+                        <li><strong>authors_names</strong> (required) - Comma-separated author names</li>
+                        <li><strong>year</strong> (required) - Publication year</li>
+                        <li>abstract - Publication abstract</li>
+                        <li>publisher_name - Name of publisher</li>
+                        <li>journal_conference_name - Journal or conference name</li>
+                        <li>volume - Volume number</li>
+                        <li>issue - Issue number</li>
+                        <li>pages - Page numbers</li>
+                        <li>indexing_status - e.g., Scopus, Web of Science</li>
+                        <li>quartile - e.g., Q1, Q2, Q3, Q4</li>
+                        <li>impact_factor - Impact factor (number)</li>
+                        <li>doi - Digital Object Identifier</li>
+                        <li>month - Month (1-12)</li>
+                        <li>citation_count - Number of citations</li>
+                        <li>bibtex_entry - BibTeX entry</li>
+                    </ul>
+
+                    <h6 class="mt-3">Important Notes:</h6>
+                    <ul>
+                        <li>All imported publications will be automatically <strong>confirmed</strong></li>
+                        <li>The <strong>faculty_email</strong> must match an existing user in the system</li>
+                        <li>Column names must match exactly (case-sensitive)</li>
+                        <li>First row should contain column headers</li>
+                        <li>Empty cells are allowed for optional fields</li>
+                    </ul>
+
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Warning:</strong> Large imports may take several minutes. Do not close this page until the import is complete.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Template Download -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-download"></i> Template</h5>
+                </div>
+                <div class="card-body">
+                    <p>Download a sample Excel template with the correct format:</p>
+                    <a href="{{ url_for('static', filename='templates/bulk_import_template.xlsx') }}" 
+                       class="btn btn-success" download>
+                        <i class="bi bi-file-earmark-excel"></i> Download Template
+                    </a>
+                    <small class="text-muted d-block mt-2">
+                        Fill in the template with your publication data
+                    </small>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mt-3">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Users:</strong> {{ total_users }}</p>
+                    <p><strong>Total Publications:</strong> {{ total_publications }}</p>
+                    <p class="mb-0"><strong>Departments:</strong></p>
+                    <ul>
+                        {% for dept in departments %}
+                        <li>{{ dept.name }} ({{ dept.code }})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

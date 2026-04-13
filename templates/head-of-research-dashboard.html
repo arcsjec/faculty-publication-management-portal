@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Head of Research Dashboard - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="bi bi-mortarboard-fill text-primary"></i> Head of Research & Development</h2>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-building"></i> {{ department.name }}
+                    {% if hor_appointed_at %}
+                    <span class="mx-2">|</span>
+                    <i class="bi bi-calendar-check"></i> Appointed: {{ hor_appointed_at.strftime('%d %b %Y') }}
+                    {% endif %}
+                    {% if hor_term_end %}
+                    <span class="mx-2">|</span>
+                    <i class="bi bi-calendar-x"></i> Term ends: {{ hor_term_end.strftime('%d %b %Y') }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people fs-1 text-primary"></i>
+                        <h3 class="mt-2 mb-0">{{ faculty_count }}</h3>
+                        <p class="text-muted mb-0">Faculty Members</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-journal-text fs-1 text-success"></i>
+                        <h3 class="mt-2 mb-0">{{ total_publications }}</h3>
+                        <p class="text-muted mb-0">Total Publications</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-star fs-1 text-warning"></i>
+                        <h3 class="mt-2 mb-0">{{ scopus_count }}</h3>
+                        <p class="text-muted mb-0">Scopus Indexed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-graph-up fs-1 text-info"></i>
+                        <h3 class="mt-2 mb-0">{{ total_citations }}</h3>
+                        <p class="text-muted mb-0">Total Citations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs for different sections -->
+        <ul class="nav nav-tabs mb-3" id="horTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="faculty-tab" data-bs-toggle="tab" data-bs-target="#faculty" type="button">
+                    <i class="bi bi-people"></i> Faculty Members
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="publications-tab" data-bs-toggle="tab" data-bs-target="#publications" type="button">
+                    <i class="bi bi-journal-text"></i> Publications
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="statistics-tab" data-bs-toggle="tab" data-bs-target="#statistics" type="button">
+                    <i class="bi bi-bar-chart"></i> Statistics
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="horTabContent">
+            <!-- Faculty Members Tab -->
+            <div class="tab-pane fade show active" id="faculty" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-people"></i> Department Faculty</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Publications</th>
+                                        <th>Scopus</th>
+                                        <th>Citations</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for faculty in faculty_members %}
+                                    <tr>
+                                        <td>{{ faculty.name }}</td>
+                                        <td>{{ faculty.email }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ faculty.role|title }}</span>
+                                            {% if faculty.id == current_user.id %}
+                                                <span class="badge bg-warning">You</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ faculty.publication_count }}</td>
+                                        <td>{{ faculty.scopus_count }}</td>
+                                        <td>{{ faculty.citation_count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Publications Tab -->
+            <div class="tab-pane fade" id="publications" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Department Publications</h5>
+                        <input type="text" id="pubSearchBox" class="form-control form-control-sm w-50" 
+                               placeholder="🔍 Search by title or author...">
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="publicationsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Author(s)</th>
+                                        <th>Year</th>
+                                        <th>Indexing</th>
+                                        <th>Citations</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for pub in publications %}
+                                    <tr data-title="{{ pub.title|lower }}" data-authors="{{ pub.authors_names|lower }}">
+                                        <td><strong>{{ pub.title }}</strong></td>
+                                        <td>{{ pub.authors_names[:100] }}{% if pub.authors_names|length > 100 %}...{% endif %}</td>
+                                        <td>{{ pub.year }}</td>
+                                        <td>
+                                            {% if pub.indexing_status == 'Scopus' %}
+                                                <span class="badge bg-warning text-dark">Scopus</span>
+                                            {% elif pub.indexing_status == 'Web of Science' %}
+                                                <span class="badge bg-info">WoS</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ pub.indexing_status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ pub.citation_count or 0 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div class="tab-pane fade" id="statistics" role="tabpanel">
+                <div class="row">
+                    <!-- Year-wise publications -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-calendar"></i> Year-wise Publications</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Year</th>
+                                            <th>Count</th>
+                                            <th>Scopus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for stat in year_wise_stats %}
+                                        <tr>
+                                            <td><strong>{{ stat.year }}</strong></td>
+                                            <td>{{ stat.count }}</td>
+                                            <td>{{ stat.scopus_count }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Indexing breakdown -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Indexing Breakdown</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Indexing Type</th>
+                                            <th>Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for indexing, count in indexing_stats.items() %}
+                                        <tr>
+                                            <td>{{ indexing }}</td>
+                                            <td><span class="badge bg-primary">{{ count }}</span></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top contributors -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-trophy"></i> Top Contributors</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Faculty Name</th>
+                                    <th>Publications</th>
+                                    <th>Scopus</th>
+                                    <th>Citations</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for faculty in top_contributors %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ faculty.name }}</td>
+                                    <td><span class="badge bg-primary">{{ faculty.publication_count }}</span></td>
+                                    <td><span class="badge bg-warning text-dark">{{ faculty.scopus_count }}</span></td>
+                                    <td><span class="badge bg-info">{{ faculty.citation_count }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Alert -->
+        <div class="alert alert-info mt-4" role="alert">
+            <i class="bi bi-info-circle"></i>
+            <strong>Note:</strong> As Head of Research & Development, you have view-only access to department data.
+            {% if hor_term_end %}
+            This role is temporary and will expire on <strong>{{ hor_term_end.strftime('%d %B %Y') }}</strong>.
+            {% else %}
+            Contact the Dean R&D office for information about your term duration.
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Search functionality for publications
+document.getElementById('pubSearchBox').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#publicationsTable tbody tr');
+    
+    rows.forEach(row => {
+        const title = row.getAttribute('data-title');
+        const authors = row.getAttribute('data-authors');
+        
+        if (title.includes(searchTerm) || authors.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

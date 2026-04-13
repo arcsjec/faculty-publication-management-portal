@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Publications - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-journals"></i> All Publications</h2>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        
+        <!-- Filters -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if selected_dept == dept.id %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Year</label>
+                        <select name="year" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Years</option>
+                            {% for yr in years %}
+                            <option value="{{ yr }}" {% if selected_year == yr %}selected{% endif %}>{{ yr }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="saved" {% if selected_status == 'saved' %}selected{% endif %}>Draft</option>
+                            <option value="confirmed" {% if selected_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <a href="{{ url_for('admin_publications') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Publications Table -->
+        {% if publications %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list"></i> Publications ({{ publications|length }})
+                    </h5>
+                    <input type="text" id="searchBox" class="form-control form-control-sm w-50" 
+                           placeholder="🔍 Search by title, author, or department...">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="publicationsTable">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Faculty</th>
+                                <th>Department</th>
+                                <th>Year</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pub in publications %}
+                            <tr data-title="{{ pub.title|lower }}" 
+                                data-author="{{ pub.author.name|lower }}" 
+                                data-department="{{ pub.department.name|lower }}">
+                                <td>
+                                    <strong>{{ pub.title[:80] }}{% if pub.title|length > 80 %}...{% endif %}</strong><br>
+                                    <small class="text-muted">{{ pub.authors_names[:60] }}...</small>
+                                </td>
+                                <td>
+                                    {{ pub.author.name }}<br>
+                                    <small class="text-muted">{{ pub.author.email }}</small>
+                                </td>
+                                <td>{{ pub.department.name }}</td>
+                                <td>{{ pub.year }}</td>
+                                <td>
+                                    {% if pub.status == 'confirmed' %}
+                                        <span class="badge bg-success">Confirmed</span>
+                                        {% if pub.edit_count %}
+                                            <br><small class="text-muted">Edited {{ pub.edit_count }}x</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Draft</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('view_publication', id=pub.id) }}" 
+                                           class="btn btn-outline-primary" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger" 
+                                                data-pub-id="{{ pub.id }}"
+                                                data-pub-title="{{ pub.title[:50] }}"
+                                                onclick="confirmDelete(this.dataset.pubId, this.dataset.pubTitle)" 
+                                                title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> No publications found matching the filters.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">⚠️ Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deleteForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> This action cannot be undone!
+                    </div>
+                    <p>Are you sure you want to delete this publication?</p>
+                    <p><strong id="deletePubTitle"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label"><span class="text-danger">*</span> Reason for deletion:</label>
+                        <textarea class="form-control" name="reason" rows="3" required
+                                  placeholder="Provide a detailed reason (this will be sent to the faculty)..."></textarea>
+                        <small class="text-muted">The faculty member will be notified with this reason.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete Publication
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search functionality
+const searchBox = document.getElementById('searchBox');
+if (searchBox) {
+    searchBox.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#publicationsTable tbody tr');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title') || '';
+            const author = row.getAttribute('data-author') || '';
+            const department = row.getAttribute('data-department') || '';
+            
+            if (title.includes(searchTerm) || 
+                author.includes(searchTerm) || 
+                department.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+    });
+    
+    // Update count in header
+    const totalCount = rows.length;
+    const countText = searchTerm ? `${visibleCount} of ${totalCount}` : `${totalCount}`;
+    document.querySelector('.card-header h5').innerHTML = 
+        `<i class="bi bi-list"></i> Publications (${countText})`;
+    });
+}
+
+// Delete confirmation
+let deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+function confirmDelete(pubId, pubTitle) {
+    document.getElementById('deletePubTitle').textContent = pubTitle;
+    document.getElementById('deleteForm').action = `/admin/publications/${pubId}/delete`;
+    deleteModal.show();
+}
+</script>
+{% endblock %}

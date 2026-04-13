@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Publication - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+.required-field::after {
+    content: " *";
+    color: red;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow-sm">
+            <div class="card-header bg-sjec-navy text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Edit Publication</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <h5 class="mb-3 text-sjec-navy">Basic Information</h5>
+                    
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label fw-bold required-field") }}
+                        {{ form.title(class="form-control" ~ (" is-invalid" if form.title.errors else "")) }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.title.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.abstract.label(class="form-label fw-bold") }}
+                        {{ form.abstract(class="form-control", rows="4") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.authors_names.label(class="form-label fw-bold required-field") }}
+                        {{ form.authors_names(class="form-control" ~ (" is-invalid" if form.authors_names.errors else ""), rows="2") }}
+                        <div class="form-text">Enter author names separated by commas</div>
+                        {% if form.authors_names.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.authors_names.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-sjec-navy">Publication Details</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.journal_conference_name.label(class="form-label fw-bold") }}
+                            {{ form.journal_conference_name(class="form-control") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.publisher_name.label(class="form-label fw-bold") }}
+                            {{ form.publisher_name(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.volume.label(class="form-label fw-bold") }}
+                            {{ form.volume(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.issue.label(class="form-label fw-bold") }}
+                            {{ form.issue(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.pages.label(class="form-label fw-bold") }}
+                            {{ form.pages(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.year.label(class="form-label fw-bold required-field") }}
+                            {{ form.year(class="form-control" ~ (" is-invalid" if form.year.errors else "")) }}
+                            {% if form.year.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.year.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.month.label(class="form-label fw-bold") }}
+                            {{ form.month(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.doi.label(class="form-label fw-bold") }}
+                            {{ form.doi(class="form-control") }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-sjec-navy">Indexing & Impact</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.indexing_status.label(class="form-label fw-bold") }}
+                            {{ form.indexing_status(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.quartile.label(class="form-label fw-bold") }}
+                            {{ form.quartile(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.impact_factor.label(class="form-label fw-bold") }}
+                            {{ form.impact_factor(class="form-control", step="0.001") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.citation_count.label(class="form-label fw-bold") }}
+                        {{ form.citation_count(class="form-control", min="0") }}
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h5 class="mb-3 text-sjec-navy">Additional Information</h5>
+                    
+                    <div class="mb-3">
+                        {{ form.bibtex_entry.label(class="form-label fw-bold") }}
+                        {{ form.bibtex_entry(class="form-control" ~ (" is-invalid" if form.bibtex_entry.errors else ""), rows="5") }}
+                        <div class="form-text">Must start with @article, @book, @inproceedings etc. and end with }} <br>Example: @article{key2024, author={Name}, title={Title}, year={2024}}</div>
+                        {% if form.bibtex_entry.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.bibtex_entry.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.pdf_file.label(class="form-label fw-bold") }}
+                        {{ form.pdf_file(class="form-control") }}
+                        {% if publication.pdf_filename %}
+                            <div class="form-text text-success">
+                                <i class="bi bi-file-earmark-pdf"></i> Current file: {{ publication.pdf_filename }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Upload a new PDF to replace the existing file (Maximum size: 25 MB)</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        {% if publication.status == 'saved' %}
+                        <button type="submit" name="action" value="save" class="btn btn-info">
+                            <i class="bi bi-save"></i> Save as Draft
+                        </button>
+                        <button type="submit" name="action" value="confirm" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Save & Confirm
+                        </button>
+                        {% else %}
+                        <button type="submit" name="action" value="save" class="btn btn-sjec-gold">
+                            <i class="bi bi-pencil"></i> Update Publication
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if publication.status == 'confirmed' %}
+<div class="alert alert-warning mt-3">
+    <h6><i class="bi bi-lock-fill"></i> This publication is confirmed and locked.</h6>
+    <p class="mb-0">You can edit it because your HoD granted edit permission. After updating, the publication will remain confirmed.</p>
+</div>
+{% endif %}
+{% endblock %}

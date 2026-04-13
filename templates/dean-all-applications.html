@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}All Applications - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-file-earmark-text"></i> All Applications</h2>
+            <p class="text-muted">View and track all faculty applications</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total</h6>
+                    <h2>{{ total_applications }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h6 class="card-title">Pending ACM</h6>
+                    <h2>{{ pending_acm }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">ACM Approved</h6>
+                    <h2>{{ acm_approved }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Dean Approved</h6>
+                    <h2>{{ dean_approved }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Rejected</h6>
+                    <h2>{{ rejected }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Status</label>
+                    <select class="form-select" name="status" onchange="this.form.submit()">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+                        <option value="acm_review" {% if status_filter == 'acm_review' %}selected{% endif %}>ACM Review</option>
+                        <option value="acm_approved" {% if status_filter == 'acm_approved' %}selected{% endif %}>ACM Approved</option>
+                        <option value="dean_approved" {% if status_filter == 'dean_approved' %}selected{% endif %}>Dean Approved</option>
+                        <option value="principal_approved" {% if status_filter == 'principal_approved' %}selected{% endif %}>Principal Approved</option>
+                        <option value="director_approved" {% if status_filter == 'director_approved' %}selected{% endif %}>Director Approved</option>
+                        <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Type</label>
+                    <select class="form-select" name="type" onchange="this.form.submit()">
+                        <option value="all" {% if app_type_filter == 'all' %}selected{% endif %}>All Types</option>
+                        <option value="conference_registration" {% if app_type_filter == 'conference_registration' %}selected{% endif %}>Conference Registration</option>
+                        <option value="publication_incentive" {% if app_type_filter == 'publication_incentive' %}selected{% endif %}>Publication Incentive</option>
+                        <option value="journal_support" {% if app_type_filter == 'journal_support' %}selected{% endif %}>Journal Support</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <a href="{{ url_for('dean_applications') }}" class="btn btn-secondary">Reset Filters</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    {% if applications %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Department</th>
+                            <th>Wallet Balance</th>
+                            <th>Title/Purpose</th>
+                            <th>Submitted On</th>
+                            <th>Status</th>
+                            <th>ACM Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ app.applicant.name }}<br>
+                                <small class="text-muted">{{ app.applicant.email }}</small>
+                            </td>
+                            <td>{{ app.applicant.department }}</td>
+                            <td>
+                                {% set rrf_balance = app.applicant.wallet_balance|default(0) %}
+                                {% set epp_balance = app.applicant.epp_balance|default(0) %}
+                                {% set epp_inr = epp_balance * 2000 %}
+                                {% set total_available = rrf_balance + epp_inr %}
+                                <div class="text-nowrap">
+                                    <strong class="text-success">₹ {{ total_available|indian_format }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                        RRF: ₹ {{ rrf_balance|indian_format }}<br>
+                                        EPP: {{ "%.1f"|format(epp_balance) }} (₹ {{ epp_inr|indian_format }})
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <strong>{{ app.title_of_paper[:40] }}{% if app.title_of_paper|length > 40 %}...{% endif %}</strong><br>
+                                <small class="text-muted">{{ app.conference_name }}</small>
+                                {% else %}
+                                <strong>{{ app.title_of_paper[:40] }}{% if app.title_of_paper|length > 40 %}...{% endif %}</strong><br>
+                                <small class="text-muted">{{ app.journal_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if app.status == 'draft' %}bg-secondary
+                                    {% elif app.status == 'submitted' or app.status == 'acm_review' %}bg-warning
+                                    {% elif app.status == 'acm_approved' %}bg-info
+                                    {% elif app.status == 'dean_approved' %}bg-primary
+                                    {% elif app.status == 'principal_approved' %}bg-success
+                                    {% elif app.status == 'director_approved' %}bg-success
+                                    {% elif app.status == 'rejected' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ app.status|replace('_', ' ')|title }}
+                                </span>
+                                {% if app.dean_approved %}
+                                <br><small class="text-success"><i class="bi bi-check-circle-fill"></i> Dean Approved</small>
+                                {% elif app.dean_approved == False and app.dean_reviewed_at %}
+                                <br><small class="text-danger"><i class="bi bi-x-circle-fill"></i> Dean Rejected</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.status in ['submitted', 'acm_review', 'acm_approved'] %}
+                                <span class="badge bg-secondary">{{ app.acm_approvals_count }}/3 Approved</span>
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ (app.acm_approvals_count / 3 * 100)|int }}%"></div>
+                                </div>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('view_application', app_id=app.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No applications found matching the selected filters.
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.progress {
+    width: 80px;
+}
+</style>
+
+{% endblock %}

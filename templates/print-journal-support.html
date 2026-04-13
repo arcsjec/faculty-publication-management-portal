@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Publication Support Assessment</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 5mm;
+            }
+            @page :first {
+                margin-top: 5mm;
+                margin-bottom: 5mm;
+            }
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.2;
+            color: #000;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 0;
+            background: white;
+        }
+        
+        .page-container {
+            border: 2px solid #000;
+            padding: 5mm;
+            min-height: 277mm;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #000;
+        }
+        
+        .header h2 {
+            margin: 0;
+            font-size: 13pt;
+            font-weight: bold;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        table td {
+            border: 1px solid #000;
+            padding: 6px;
+            vertical-align: top;
+        }
+        
+        table td:first-child {
+            width: 48%;
+            font-weight: normal;
+            background: #f5f5f5;
+        }
+        
+        .signature-section {
+            margin-top: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-decoration: underline;
+            font-size: 10pt;
+        }
+        
+        .signature-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+        
+        .signature-box {
+            flex: 1;
+            font-size: 9pt;
+        }
+        
+        .signature-img {
+            max-height: 35px;
+            max-width: 120px;
+            display: block;
+            margin: 5px 0;
+        }
+        
+        .dean-section {
+            margin-top: 15px;
+            padding: 8px;
+            border: 1px solid #000;
+            font-size: 9pt;
+        }
+        
+        .dean-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .dean-row {
+            margin: 8px 0;
+        }
+        
+        .approval-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .approval-box {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #000;
+            font-size: 9pt;
+        }
+        
+        .no-print {
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .print-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 25px;
+            font-size: 12pt;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .print-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="print-btn" onclick="window.print()">
+            🖨️ Print Application
+        </button>
+        <button class="print-btn" style="background: #6c757d; margin-left: 10px;" onclick="window.close()">
+            ✖️ Close
+        </button>
+    </div>
+
+    <div class="page-container">
+        <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000;">
+            <img src="{{ url_for('static', filename='images/sjec_form_logo.png') }}" alt="College Logo" style="height: 65px; margin-right: 15px;">
+            <div style="flex: 1; text-align: center;">
+                <h2 style="margin: 0; font-size: 16pt; font-weight: bold;">ST. JOSEPH ENGINEERING COLLEGE</h2>
+                <p style="margin: 5px 0 0 0; font-size: 10pt;">Vamanjoor, Mangaluru - 575028</p>
+            </div>
+        </div>
+        
+        <div class="header">
+            <h2>ASSESSMENT OF QUALITY OF JOURNAL SUPPORT</h2>
+        </div>
+
+        <table>
+            <tr>
+                <td>1. Name of the Applicant</td>
+                <td>{{ application.applicant.name }}</td>
+            </tr>
+            <tr>
+                <td>2. Title of the Publication</td>
+                <td>{{ application.title_of_paper or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>3. Application for</td>
+                <td>Journal Publication Support</td>
+            </tr>
+            <tr>
+                <td>4. Type of Publication</td>
+                <td>{{ application.type_of_publication or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>5. Type of Journal</td>
+                <td>{{ application.type_of_journal or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>6. Name of the Journal</td>
+                <td>{{ application.journal_name or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>7. Quartile of the Journal</td>
+                <td>{{ application.journal_quartile or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>8. Impact Factor of the Journal</td>
+                <td>{{ application.journal_impact_factor or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>9. Type of Indexing</td>
+                <td>{{ application.indexing_type or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>10. Signature of the Applicant</td>
+                <td>
+                    {% if application.applicant.signature %}
+                        <img src="{{ url_for('user_signature', user_id=application.applicant_id) }}" class="signature-img" alt="Applicant Signature">
+                    {% endif %}
+                    <div style="margin-top: 5px;">Date: {{ application.applicant_signature_date.strftime('%d-%m-%Y') if application.applicant_signature_date else (application.submitted_at.strftime('%d-%m-%Y') if application.submitted_at else '') }}</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="signature-section">
+            <div class="signature-title">Assessment Committee Proceedings:</div>
+            <div style="margin-bottom: 8px; font-size: 9pt;"><strong>Signatures of Assessment Committee Members:</strong></div>
+            
+            <div class="signature-row">
+                {% if acm_reviews and acm_reviews|length > 0 %}
+                    {# Only show approved reviews that actually exist #}
+                    {% set approved_reviews = acm_reviews|selectattr('decision', 'equalto', 'approved')|list %}
+                    {% if approved_reviews|length > 0 %}
+                        {% for review in approved_reviews %}
+                        <div class="signature-box">
+                            {% if review.reviewer_signature_snapshot %}
+                                <img src="data:image/png;base64,{{ review.reviewer_signature_snapshot|b64encode }}" class="signature-img" alt="ACM Signature">
+                            {% elif review.reviewer.signature %}
+                                {# Fallback for old reviews before snapshot feature #}
+                                <img src="{{ url_for('user_signature', user_id=review.reviewer.id) }}" class="signature-img" alt="ACM Signature">
+                            {% endif %}
+                            Name: {{ review.reviewer_name_snapshot if review.reviewer_name_snapshot else review.reviewer.name }}<br>
+                            Date: {{ review.reviewed_at.strftime('%d-%m-%Y') if review.reviewed_at else '___________' }}<br>
+                            {% if review.comments %}
+                            Comments: {{ review.comments }}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        {# No approved reviews - show blank slots #}
+                        <div class="signature-box">
+                            Name: ___________________<br>
+                            Date: ___________________<br>
+                            Comments: ___________________
+                        </div>
+                        <div class="signature-box">
+                            Name: ___________________<br>
+                            Date: ___________________<br>
+                            Comments: ___________________
+                        </div>
+                        <div class="signature-box">
+                            Name: ___________________<br>
+                            Date: ___________________<br>
+                            Comments: ___________________
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {# No ACM reviews at all - show blank slots #}
+                    <div class="signature-box">
+                        Name: ___________________<br>
+                        Date: ___________________<br>
+                        Comments: ___________________
+                    </div>
+                    <div class="signature-box">
+                        Name: ___________________<br>
+                        Date: ___________________<br>
+                        Comments: ___________________
+                    </div>
+                    <div class="signature-box">
+                        Name: ___________________<br>
+                        Date: ___________________<br>
+                        Comments: ___________________
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dean-section">
+            <div class="dean-title">Dean of R&D:</div>
+            <div class="dean-row">
+                Recommended Grant Amount for Journal Publication Support: Rs {{ application.dean_recommended_amount if application.dean_recommended_amount else '___________________' }}
+            </div>
+            {% if application.dean_comments %}
+            <div class="dean-row">
+                Comments: {{ application.dean_comments }}
+            </div>
+            {% endif %}
+            <div style="margin-top: 25px;">
+                {% if application.dean_sec_approved_at and application.dean_reviewed_at %}
+                    {# Show snapshot signature and name from approval time, fallback to current user if no snapshot #}
+                    {# Dean signature only appears AFTER Dean Secretary approval #}
+                    {% if application.dean_signature_snapshot %}
+                        <img src="data:image/png;base64,{{ application.dean_signature_snapshot|b64encode }}" class="signature-img" alt="Dean Signature">
+                    {% else %}
+                        {# Fallback for old applications before snapshot feature #}
+                        {% set dean = namespace(user=none) %}
+                        {% for user in all_users if user.role == 'dean' %}
+                            {% set dean.user = user %}
+                        {% endfor %}
+                        {% if dean.user and dean.user.signature %}
+                            <img src="{{ url_for('user_signature', user_id=dean.user.id) }}" class="signature-img" alt="Dean Signature">
+                        {% endif %}
+                    {% endif %}
+                    <div style="margin-top: 2pt;">
+                        {% if application.dean_name_snapshot %}
+                            {{ application.dean_name_snapshot }}
+                        {% else %}
+                            {% set dean = namespace(user=none) %}
+                            {% for user in all_users if user.role == 'dean' %}
+                                {% set dean.user = user %}
+                            {% endfor %}
+                            {{ dean.user.name if dean.user else '' }}
+                        {% endif %}
+                    </div>
+                    <div>Dean - R&D</div>
+                    Date: {{ application.dean_reviewed_at.strftime('%d-%m-%Y') if application.dean_reviewed_at else '___________' }}
+                {% else %}
+                    {# Leave space for physical signature #}
+                    <div style="height: 25px; margin-bottom: 5px;"></div>
+                    Dean - R&D<br>
+                    Date: ___________________
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="approval-row">
+            <div class="approval-box">
+                <strong>Recommendation by Principal</strong><br>
+                {% if application.principal_approved and application.principal_approved_at %}
+                    {# Show snapshot signature and name from approval time, fallback to current user if no snapshot #}
+                    {% if application.principal_signature_snapshot %}
+                        <img src="data:image/png;base64,{{ application.principal_signature_snapshot|b64encode }}" class="signature-img" alt="Principal Signature">
+                    {% else %}
+                        {# Fallback for old applications before snapshot feature #}
+                        {% set principal = namespace(user=none) %}
+                        {% for user in all_users if user.role == 'principal' %}
+                            {% set principal.user = user %}
+                        {% endfor %}
+                        {% if principal.user and principal.user.signature %}
+                            <img src="{{ url_for('user_signature', user_id=principal.user.id) }}" class="signature-img" alt="Principal Signature">
+                        {% endif %}
+                    {% endif %}
+                    <div style="margin-top: 2pt;">
+                        {% if application.principal_name_snapshot %}
+                            {{ application.principal_name_snapshot }}
+                        {% else %}
+                            {% set principal = namespace(user=none) %}
+                            {% for user in all_users if user.role == 'principal' %}
+                                {% set principal.user = user %}
+                            {% endfor %}
+                            {{ principal.user.name if principal.user else '' }}
+                        {% endif %}
+                    </div>
+                    Date: {{ application.principal_approved_at.strftime('%d-%m-%Y') if application.principal_approved_at else '' }}
+                {% else %}
+                    {# Leave space for physical signature #}
+                    <div style="height: 25px; margin-bottom: 5px;"></div>
+                    Date: ___________________
+                {% endif %}
+            </div>
+            <div class="approval-box">
+                <strong>Approval by Director</strong><br>
+                {% if application.director_approved and application.director_approved_at %}
+                    {# Show snapshot signature and name from approval time, fallback to current user if no snapshot #}
+                    {% if application.director_signature_snapshot %}
+                        <img src="data:image/png;base64,{{ application.director_signature_snapshot|b64encode }}" class="signature-img" alt="Director Signature">
+                    {% else %}
+                        {# Fallback for old applications before snapshot feature #}
+                        {% set director = namespace(user=none) %}
+                        {% for user in all_users if user.role == 'director' %}
+                            {% set director.user = user %}
+                        {% endfor %}
+                        {% if director.user and director.user.signature %}
+                            <img src="{{ url_for('user_signature', user_id=director.user.id) }}" class="signature-img" alt="Director Signature">
+                        {% endif %}
+                    {% endif %}
+                    <div style="margin-top: 2pt;">
+                        {% if application.director_name_snapshot %}
+                            {{ application.director_name_snapshot }}
+                        {% else %}
+                            {% set director = namespace(user=none) %}
+                            {% for user in all_users if user.role == 'director' %}
+                                {% set director.user = user %}
+                            {% endfor %}
+                            {{ director.user.name if director.user else '' }}
+                        {% endif %}
+                    </div>
+                    Date: {{ application.director_approved_at.strftime('%d-%m-%Y') if application.director_approved_at else '' }}
+                {% else %}
+                    {# Leave space for physical signature #}
+                    <div style="height: 25px; margin-bottom: 5px;"></div>
+                    Date: ___________________
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

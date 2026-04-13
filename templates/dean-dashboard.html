@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+
+{% block title %}Dean R&D Dashboard - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-mortarboard"></i> Dean Research & Development Dashboard</h2>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="mb-3"><i class="bi bi-lightning-fill text-warning"></i> Quick Actions</h5>
+            </div>
+            
+            <!-- View Users -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('view_users') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-people-fill fs-1 text-primary"></i>
+                                <span class="badge bg-primary rounded-pill">{{ total_users }}</span>
+                            </div>
+                            <h6 class="card-title mb-0">View Users</h6>
+                            <small class="text-muted">Manage all users</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Manage Users -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('admin_users') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-person-plus-fill fs-1 text-success"></i>
+                                <span class="badge bg-success rounded-pill"><i class="bi bi-plus"></i></span>
+                            </div>
+                            <h6 class="card-title mb-0">Manage Users</h6>
+                            <small class="text-muted">Add/Edit users</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- ACM Panel -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('manage_acm_panel') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-people fs-1 text-info"></i>
+                                <span class="badge bg-info rounded-pill">{{ active_acm_members }}/3</span>
+                            </div>
+                            <h6 class="card-title mb-0">ACM Panel</h6>
+                            <small class="text-muted">Assessment Committee</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Head of Research -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="/head-of-research/manage" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-mortarboard-fill fs-1 text-primary"></i>
+                                <span class="badge bg-primary rounded-pill"><i class="bi bi-building"></i></span>
+                            </div>
+                            <h6 class="card-title mb-0">Head of Research</h6>
+                            <small class="text-muted">Dept. R&D Heads</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Review Applications -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('dean_review_applications') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-clipboard-check fs-1 text-warning"></i>
+                                {% if acm_approved_apps > 0 %}
+                                <span class="badge bg-warning text-dark rounded-pill pulse-badge">{{ acm_approved_apps }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill">0</span>
+                                {% endif %}
+                            </div>
+                            <h6 class="card-title mb-0">Review Applications</h6>
+                            <small class="text-muted">Pending your review</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- All Applications -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('dean_applications') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-file-earmark-text fs-1 text-secondary"></i>
+                                <span class="badge bg-secondary rounded-pill">{{ total_applications }}</span>
+                            </div>
+                            <h6 class="card-title mb-0">All Applications</h6>
+                            <small class="text-muted">View all submissions</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Statistics -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('statistics') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-bar-chart-fill fs-1 text-danger"></i>
+                                <span class="badge bg-danger rounded-pill"><i class="bi bi-graph-up"></i></span>
+                            </div>
+                            <h6 class="card-title mb-0">Statistics</h6>
+                            <small class="text-muted">Analytics & Reports</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Circulars -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('view_circulars') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-megaphone-fill fs-1 text-danger"></i>
+                                {% if unread_circulars is defined and unread_circulars > 0 %}
+                                <span class="badge bg-danger rounded-pill pulse-badge">{{ unread_circulars }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary rounded-pill">0</span>
+                                {% endif %}
+                            </div>
+                            <h6 class="card-title mb-0">Circulars</h6>
+                            <small class="text-muted">Latest announcements</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Incentive Configuration -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('dean_incentive_config') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-gear-fill fs-1 text-primary"></i>
+                                <span class="badge bg-primary rounded-pill"><i class="bi bi-wrench"></i></span>
+                            </div>
+                            <h6 class="card-title mb-0">Incentive Config</h6>
+                            <small class="text-muted">Configure amounts</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Annual Dispersal -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('dean_annual_dispersal') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-wallet2 fs-1 text-success"></i>
+                                <span class="badge bg-success rounded-pill"><i class="bi bi-cash-stack"></i></span>
+                            </div>
+                            <h6 class="card-title mb-0">Annual Dispersal</h6>
+                            <small class="text-muted">RRF allocation</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Final Approval Monitor -->
+            <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+                <a href="{{ url_for('final_approval_pending') }}" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 hover-shadow">
+                        <div class="card-body text-center">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <i class="bi bi-shield-check fs-1 text-warning"></i>
+                                <span class="badge bg-warning text-dark rounded-pill"><i class="bi bi-eye"></i></span>
+                            </div>
+                            <h6 class="card-title mb-0">Final Approval</h6>
+                            <small class="text-muted">Monitor progress</small>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Application Status Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="mb-3"><i class="bi bi-graph-up text-primary"></i> Application Status Overview</h5>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Pending ACM Review</h6>
+                                <h3 class="mb-0 text-warning">{{ pending_acm_review }}</h3>
+                            </div>
+                            <i class="bi bi-hourglass-split fs-1 text-warning opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">ACM Approved</h6>
+                                <h3 class="mb-0 text-info">{{ acm_approved_apps }}</h3>
+                            </div>
+                            <i class="bi bi-check-circle fs-1 text-info opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Dean Approved</h6>
+                                <h3 class="mb-0 text-success">{{ dean_approved_apps }}</h3>
+                            </div>
+                            <i class="bi bi-award fs-1 text-success opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card border-danger">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Rejected</h6>
+                                <h3 class="mb-0 text-danger">{{ rejected_apps }}</h3>
+                            </div>
+                            <i class="bi bi-x-circle fs-1 text-danger opacity-25"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        {% if recent_applications %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Applications</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tracking ID</th>
+                                        <th>Type</th>
+                                        <th>Applicant</th>
+                                        <th>Status</th>
+                                        <th>Submitted</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for app in recent_applications %}
+                                    <tr>
+                                        <td><strong>{{ app.tracking_id }}</strong></td>
+                                        <td>
+                                            {% if app.application_type == 'conference_registration' %}
+                                            <span class="badge bg-primary">Conference</span>
+                                            {% elif app.application_type == 'publication_incentive' %}
+                                            <span class="badge bg-success">Incentive</span>
+                                            {% else %}
+                                            <span class="badge bg-info">Journal Support</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ app.applicant.name }}<br>
+                                            <small class="text-muted">{{ app.applicant.department }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if app.status == 'submitted' or app.status == 'acm_review' %}bg-warning
+                                                {% elif app.status == 'acm_approved' %}bg-info
+                                                {% elif app.status == 'dean_approved' %}bg-success
+                                                {% elif app.status == 'rejected' %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ app.status|replace('_', ' ')|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ app.created_at.strftime('%d %b %Y') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('view_application', app_id=app.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Publications Filter Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('dashboard') }}">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Department</label>
+                            <select name="department" class="form-select">
+                                <option value="">All Departments</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}" {% if dept.id == selected_dept %}selected{% endif %}>{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Year</label>
+                            <select name="year" class="form-select">
+                                <option value="">All Years</option>
+                                {% for year in years %}
+                                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Month</label>
+                            <select name="month" class="form-select">
+                                <option value="">All Months</option>
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-sjec-navy w-100">
+                                <i class="bi bi-filter"></i> Apply Filter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-box">
+                            <h3 class="text-sjec-navy">{{ all_publications|length }}</h3>
+                            <p class="text-muted">Total Publications</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-box">
+                            <h3 class="text-sjec-gold">{{ all_publications|selectattr('indexing_status', 'equalto', 'Scopus')|list|length }}</h3>
+                            <p class="text-muted">Scopus Indexed</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-box">
+                            <h3 class="text-success">{{ all_publications|selectattr('quartile', 'equalto', 'Q1')|list|length }}</h3>
+                            <p class="text-muted">Q1 Publications</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-box">
+                            <h3 class="text-sjec-navy">{{ all_publications|sum(attribute='citation_count') }}</h3>
+                            <p class="text-muted">Total Citations</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Publications Table -->
+        {% if publications %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-sjec-navy text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-journals"></i> Publication List</h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="searchBox" class="form-control form-control-sm" 
+                               placeholder="🔍 Search by title or author..." style="width: 300px;">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-success" onclick="exportToExcel()">
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </button>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="exportToBibTeX()">
+                                <i class="bi bi-file-earmark-code"></i> BibTeX
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm" id="publicationsTable">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Authors</th>
+                                <th>Year</th>
+                                <th>Department</th>
+                                <th>Indexing</th>
+                                <th>Citations</th>
+                                <th>Faculty</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pub in publications %}
+                            <tr data-title="{{ pub.title|lower }}" data-authors="{{ pub.authors_names|lower }}">
+                                <td>
+                                    <strong>{{ pub.title[:60] }}{% if pub.title|length > 60 %}...{% endif %}</strong>
+                                </td>
+                                <td><small>{{ pub.authors_names[:40] }}...</small></td>
+                                <td>{{ pub.year }}</td>
+                                <td><span class="badge bg-secondary">{{ pub.department.code }}</span></td>
+                                <td>
+                                    {% if pub.indexing_status %}
+                                        <span class="badge bg-success">{{ pub.indexing_status }}</span>
+                                    {% endif %}
+                                    {% if pub.quartile %}
+                                        <span class="badge bg-info">{{ pub.quartile }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pub.citation_count or 0 }}</td>
+                                <td><small>{{ pub.author.name }}</small></td>
+                                <td>
+                                    <a href="{{ url_for('view_publication', id=pub.id) }}" class="btn btn-outline-primary btn-sm" title="View">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Controls -->
+                {% if pagination and pagination.pages > 1 %}
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} to 
+                        {{ [pagination.page * pagination.per_page, pagination.total]|min }} 
+                        of {{ pagination.total }} publications
+                    </div>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('dashboard', page=pagination.prev_num, department=selected_dept, year=selected_year, month=selected_month) if pagination.has_prev else '#' }}">
+                                    <i class="bi bi-chevron-left"></i> Prev
+                                </a>
+                            </li>
+                            
+                            {% for page_num in range(1, pagination.pages + 1) %}
+                                {% if page_num == pagination.page %}
+                                    <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                                {% elif page_num == 1 or page_num == pagination.pages or (page_num >= pagination.page - 2 and page_num <= pagination.page + 2) %}
+                                    <li class="page-item"><a class="page-link" href="{{ url_for('dashboard', page=page_num, department=selected_dept, year=selected_year, month=selected_month) }}">{{ page_num }}</a></li>
+                                {% elif page_num == pagination.page - 3 or page_num == pagination.page + 3 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('dashboard', page=pagination.next_num, department=selected_dept, year=selected_year, month=selected_month) if pagination.has_next else '#' }}">
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> No publications found for the selected filters.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchBox = document.getElementById('searchBox');
+    const table = document.getElementById('publicationsTable');
+    
+    if (!searchBox || !table) return;
+    
+    searchBox.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        
+        const rows = tbody.querySelectorAll('tr');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title') || '';
+            const authors = row.getAttribute('data-authors') || '';
+            
+            if (title.includes(searchTerm) || authors.includes(searchTerm)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+});
+
+// Export to Excel
+function exportToExcel() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = "{{ url_for('export_excel') }}?" + params.toString();
+}
+
+// Export to BibTeX
+function exportToBibTeX() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = "{{ url_for('export_bibtex') }}?" + params.toString();
+}
+</script>
+
+<style>
+/* Quick Action Cards Hover Effect */
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Pulse Animation for Pending Badge */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
+.pulse-badge {
+    animation: pulse 2s infinite;
+}
+
+/* Quick Action Card Icons */
+.card-body i.fs-1 {
+    font-size: 2.5rem !important;
+}
+
+/* Card Link Styling */
+a.text-decoration-none .card {
+    border-left: 4px solid transparent;
+    transition: border-left 0.3s ease;
+}
+
+a.text-decoration-none .card:hover {
+    border-left-color: var(--bs-primary);
+}
+
+/* Status Overview Cards */
+.card.border-warning,
+.card.border-info,
+.card.border-success,
+.card.border-danger {
+    border-width: 2px !important;
+}
+</style>
+
+{% endblock %}

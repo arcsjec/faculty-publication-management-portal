@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Departments - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-building"></i> Manage Departments</h2>
+            <p class="text-muted">Add, edit, or view departments</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDeptModal">
+                <i class="bi bi-plus-circle"></i> Add New Department
+            </button>
+        </div>
+    </div>
+
+    <!-- Departments List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-sjec-navy text-white">
+                    <h5 class="mb-0"><i class="bi bi-list"></i> All Departments ({{ dept_stats|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if dept_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Department Name</th>
+                                    <th>Code</th>
+                                    <th>Faculty</th>
+                                    <th>Publications</th>
+                                    <th>HoD</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in dept_stats %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td><strong>{{ stat.department.name }}</strong></td>
+                                    <td><span class="badge bg-secondary">{{ stat.department.code }}</span></td>
+                                    <td>
+                                        {% if stat.faculty_count > 0 %}
+                                        <span class="badge bg-success">{{ stat.faculty_count }} faculty</span>
+                                        {% else %}
+                                        <span class="text-muted">No faculty</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if stat.publication_count > 0 %}
+                                        <span class="badge bg-info">{{ stat.publication_count }} publications</span>
+                                        {% else %}
+                                        <span class="text-muted">No publications</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if stat.hod %}
+                                        <i class="bi bi-person-badge text-primary"></i> {{ stat.hod.name }}
+                                        {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning" onclick="editDepartment({{ stat.department.id }}, '{{ stat.department.name }}', '{{ stat.department.code }}')">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </button>
+                                        {% if stat.faculty_count == 0 and stat.publication_count == 0 %}
+                                        <button class="btn btn-sm btn-danger" onclick="deleteDepartment({{ stat.department.id }}, '{{ stat.department.name }}')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled title="Cannot delete department with faculty or publications">
+                                            <i class="bi bi-lock"></i> Delete
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No departments found. Create your first department!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Department Modal -->
+<div class="modal fade" id="createDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Create New Department</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin_create_department') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="dept_name" class="form-label">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dept_name" name="name" required
+                               placeholder="e.g., Computer Science and Engineering">
+                        <div class="form-text">Full department name</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dept_code" class="form-label">Department Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="dept_code" name="code" required
+                               placeholder="e.g., CSE" maxlength="10" style="text-transform: uppercase;">
+                        <div class="form-text">Short code (will be converted to uppercase)</div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Note:</strong>
+                        <ul class="mb-0">
+                            <li>Department name and code must be unique</li>
+                            <li>Code will be automatically converted to uppercase</li>
+                            <li>After creating, you can assign faculty and HoD</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Create Department
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Department Modal -->
+<div class="modal fade" id="editDeptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-pencil"></i> Edit Department</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="editDeptForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_dept_name" class="form-label">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_dept_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_dept_code" class="form-label">Department Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_dept_code" name="code" required
+                               maxlength="10" style="text-transform: uppercase;">
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong>
+                        Changing department details may affect existing users and publications.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-check-circle"></i> Update Department
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editDepartment(deptId, name, code) {
+    document.getElementById('editDeptForm').action = `/admin/departments/${deptId}/edit`;
+    document.getElementById('edit_dept_name').value = name;
+    document.getElementById('edit_dept_code').value = code;
+    new bootstrap.Modal(document.getElementById('editDeptModal')).show();
+}
+
+function deleteDepartment(deptId, name) {
+    if (confirm(`Are you sure you want to delete the department "${name}"?\n\nThis action cannot be undone!`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/departments/${deptId}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Auto-uppercase department code
+document.getElementById('dept_code').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+
+document.getElementById('edit_dept_code').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+</script>
+
+{% endblock %}

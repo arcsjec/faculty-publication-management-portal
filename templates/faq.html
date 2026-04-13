@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .faq-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .faq-search {
+        max-width: 600px;
+        margin: 0 auto 2rem;
+    }
+    
+    .faq-search input {
+        border-radius: 50px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .category-section {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    
+    .category-header {
+        background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+        border-left: 5px solid #667eea;
+        padding: 1.25rem 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .category-header:hover {
+        background: linear-gradient(135deg, #e8f4f8 0%, #f6f9fc 100%);
+    }
+    
+    .category-header h3 {
+        margin: 0;
+        color: #1e3c72;
+        font-size: 1.5rem;
+    }
+    
+    .category-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+    
+    .accordion-item {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .accordion-button {
+        background: white;
+        color: #2a5298;
+        font-weight: 600;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background: #f8f9fa;
+        color: #667eea;
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: #dee2e6;
+    }
+    
+    .accordion-body {
+        padding: 1.5rem;
+        background: #fafbfc;
+        color: #495057;
+        line-height: 1.8;
+    }
+    
+    .faq-count {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-left: 0.5rem;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .help-box {
+        background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
+        border-left: 4px solid #ffc107;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-header text-center">
+    <div class="container">
+        <h1><i class="bi bi-question-circle"></i> Frequently Asked Questions</h1>
+        <p class="lead mb-0">Find answers to common questions about the SJEC Publication Portal</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Box -->
+    <div class="faq-search">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control border-start-0" id="faqSearch" 
+                   placeholder="Search FAQs..." onkeyup="searchFAQs()">
+        </div>
+    </div>
+
+    <!-- FAQ Categories -->
+    {% if faq_categories %}
+        <div id="faqContainer">
+            {% for category, faqs in faq_categories.items() %}
+            <div class="category-section" data-category="{{ category }}">
+                <div class="category-header" data-bs-toggle="collapse" data-bs-target="#category{{ loop.index }}">
+                    <div class="d-flex align-items-center">
+                        <div class="category-icon">
+                            {% if category == 'General' %}
+                                <i class="bi bi-info-circle-fill"></i>
+                            {% elif category == 'Publications' %}
+                                <i class="bi bi-journal-text"></i>
+                            {% elif category == 'Wallet' %}
+                                <i class="bi bi-wallet2"></i>
+                            {% elif category == 'Applications' %}
+                                <i class="bi bi-file-earmark-text"></i>
+                            {% elif category == 'Technical' %}
+                                <i class="bi bi-gear"></i>
+                            {% else %}
+                                <i class="bi bi-question-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h3>{{ category }} <span class="faq-count">{{ faqs|length }}</span></h3>
+                        </div>
+                        <div>
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="collapse show" id="category{{ loop.index }}">
+                    <div class="accordion" id="accordion{{ loop.index }}">
+                        {% for faq in faqs %}
+                        <div class="accordion-item faq-item" data-question="{{ faq.question|lower }}" data-answer="{{ faq.answer|lower }}">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#faq{{ faq.id }}"
+                                        onclick="incrementFAQView({{ faq.id }})">
+                                    <i class="bi bi-question-circle-fill me-2 text-primary"></i>
+                                    {{ faq.question }}
+                                </button>
+                            </h2>
+                            <div id="faq{{ faq.id }}" class="accordion-collapse collapse" 
+                                 data-bs-parent="#accordion{{ loop.index }}">
+                                <div class="accordion-body">
+                                    <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                                    {{ faq.answer|safe }}
+                                    <div class="text-muted mt-3 small">
+                                        <i class="bi bi-eye"></i> Viewed {{ faq.view_count }} times
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div id="noResults" class="no-results" style="display: none;">
+            <i class="bi bi-search" style="font-size: 3rem; color: #dee2e6;"></i>
+            <h4 class="mt-3">No FAQs found</h4>
+            <p>Try different keywords or browse by category above</p>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> No FAQs available at the moment. Please check back later or contact support.
+        </div>
+    {% endif %}
+
+    <!-- Help Box -->
+    <div class="help-box">
+        <h5><i class="bi bi-headset"></i> Still need help?</h5>
+        <p class="mb-2">If you couldn't find the answer you're looking for:</p>
+        <ul class="mb-3">
+            <li>Contact your department HoD for department-specific queries</li>
+            <li>Email the admin at <strong>admin@sjec.ac.in</strong></li>
+            {% if current_user.is_authenticated %}
+            <li>Submit feedback using the <a href="{{ url_for('my_feedback') }}">Feedback System</a></li>
+            <li>Check the detailed <a href="{{ url_for('user_guide') }}">User Guide</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+<script>
+function searchFAQs() {
+    const searchTerm = document.getElementById('faqSearch').value.toLowerCase();
+    const faqItems = document.querySelectorAll('.faq-item');
+    const categories = document.querySelectorAll('.category-section');
+    let visibleCount = 0;
+    
+    faqItems.forEach(item => {
+        const question = item.dataset.question;
+        const answer = item.dataset.answer;
+        
+        if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Hide empty categories
+    categories.forEach(category => {
+        const visibleItems = category.querySelectorAll('.faq-item:not([style*="display: none"])');
+        if (visibleItems.length === 0) {
+            category.style.display = 'none';
+        } else {
+            category.style.display = '';
+        }
+    });
+    
+    // Show/hide no results message
+    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+    document.getElementById('faqContainer').style.display = visibleCount === 0 ? 'none' : 'block';
+}
+
+function incrementFAQView(faqId) {
+    // Send AJAX request to increment view count
+    fetch(`/faq/view/${faqId}`)
+        .then(response => response.json())
+        .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

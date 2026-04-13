@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}ACM Reviews - Faculty Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-clipboard-check"></i> ACM Panel - Review Applications</h2>
+            <p class="text-muted">Review applications from faculty members as part of the Assessment Committee</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Pending Reviews</h6>
+                    <h2>{{ pending_count }}</h2>
+                    <small>Applications awaiting your review</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Approved by You</h6>
+                    <h2>{{ approved_count }}</h2>
+                    <small>Applications you approved</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h6 class="card-title">Rejected by You</h6>
+                    <h2>{{ rejected_count }}</h2>
+                    <small>Applications you rejected</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Total Reviewed</h6>
+                    <h2>{{ total_reviewed }}</h2>
+                    <small>All applications reviewed</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3" id="reviewTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                Pending Review <span class="badge bg-danger ms-1">{{ pending_count }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reviewed-tab" data-bs-toggle="tab" data-bs-target="#reviewed" type="button" role="tab">
+                Reviewed by You <span class="badge bg-secondary ms-1">{{ total_reviewed }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                All Applications <span class="badge bg-secondary ms-1">{{ all_applications|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="reviewTabsContent">
+        <!-- Pending Review Tab -->
+        <div class="tab-pane fade show active" id="pending" role="tabpanel">
+            {% if pending_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Department</th>
+                            <th>Title/Purpose</th>
+                            <th>Submitted</th>
+                            <th>ACM Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in pending_applications %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}</td>
+                            <td>{{ app.applicant.department.name if app.applicant.department else 'N/A' }}</td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                {{ app.title_of_paper[:50] }}{% if app.title_of_paper|length > 50 %}...{% endif %}
+                                {% else %}
+                                {{ app.title_of_paper[:50] }}{% if app.title_of_paper|length > 50 %}...{% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ app.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <small>{{ app.acm_approvals_count }}/3 approved</small>
+                                {% if app.acm_reviews|length > 0 %}
+                                <br>
+                                {% for review in app.acm_reviews %}
+                                <span class="badge badge-sm {% if review.decision == 'approved' %}bg-success{% elif review.decision == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                    {{ review.reviewer.name.split()[0] }}: {{ review.decision|title }}
+                                </span>
+                                {% endfor %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                                {% if app.applicant_id == current_user.id %}
+                                <span class="badge bg-warning text-dark">Your Application</span>
+                                {% else %}
+                                <button class="btn btn-sm btn-success" onclick="showReviewModal({{ app.id }}, 'approve', '{{ app.application_type }}')">
+                                    <i class="bi bi-check-circle"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="showReviewModal({{ app.id }}, 'reject', '{{ app.application_type }}')">
+                                    <i class="bi bi-x-circle"></i> Reject
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No pending applications to review at this time.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Reviewed Tab -->
+        <div class="tab-pane fade" id="reviewed" role="tabpanel">
+            {% if reviewed_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Your Decision</th>
+                            <th>Your Comments</th>
+                            <th>Reviewed On</th>
+                            <th>Final Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in reviewed_applications %}
+                        {% set my_review = app.acm_reviews|selectattr('reviewer_id', 'equalto', current_user.id)|first %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.name }}</td>
+                            <td>
+                                <span class="badge {% if my_review.decision == 'approved' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ my_review.decision|title }}
+                                </span>
+                            </td>
+                            <td>{{ my_review.comments[:50] if my_review.comments else '-' }}</td>
+                            <td>{{ my_review.reviewed_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if app.status == 'acm_approved' %}bg-success
+                                    {% elif app.status == 'rejected' %}bg-danger
+                                    {% elif app.status == 'dean_approved' or app.status == 'principal_approved' or app.status == 'director_approved' %}bg-primary
+                                    {% else %}bg-warning{% endif %}">
+                                    {{ app.status|replace('_', ' ')|title }}
+                                </span>
+                                <br><small>{{ app.acm_approvals_count }}/3 ACM approved</small>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> You haven't reviewed any applications yet.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- All Applications Tab -->
+        <div class="tab-pane fade" id="all" role="tabpanel">
+            {% if all_applications %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tracking ID</th>
+                            <th>Type</th>
+                            <th>Applicant</th>
+                            <th>Department</th>
+                            <th>Submitted</th>
+                            <th>ACM Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in all_applications %}
+                        {% set my_review = app.acm_reviews|selectattr('reviewer_id', 'equalto', current_user.id)|first %}
+                        <tr>
+                            <td><strong>{{ app.tracking_id }}</strong></td>
+                            <td>
+                                {% if app.application_type == 'conference_registration' %}
+                                <span class="badge bg-primary">Conference</span>
+                                {% elif app.application_type == 'publication_incentive' %}
+                                <span class="badge bg-success">Incentive</span>
+                                {% else %}
+                                <span class="badge bg-info">Journal Support</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ app.applicant.name }}
+                                {% if app.applicant_id == current_user.id %}
+                                <span class="badge bg-warning text-dark">You</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.applicant.department.name if app.applicant.department else 'N/A' }}</td>
+                            <td>{{ app.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <small>{{ app.acm_approvals_count }}/3 approved</small>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ (app.acm_approvals_count / 3 * 100)|int }}%"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if app.status == 'submitted' or app.status == 'acm_review' %}bg-warning
+                                    {% elif app.status == 'acm_approved' %}bg-success
+                                    {% elif app.status == 'rejected' %}bg-danger
+                                    {% else %}bg-primary{% endif %}">
+                                    {{ app.status|replace('_', ' ')|title }}
+                                </span>
+                                {% if my_review %}
+                                <br><span class="badge badge-sm {% if my_review.decision == 'approved' %}bg-success{% else %}bg-danger{% endif %}">
+                                    Your: {{ my_review.decision|title }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="viewApplication({{ app.id }})">
+                                    <i class="bi bi-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No applications in ACM review stages at this time.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ACM Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewFormContainer">
+                    <form id="reviewForm">
+                        <input type="hidden" id="review_app_id" name="app_id">
+                        <input type="hidden" id="review_decision" name="decision">
+                        
+                        <div class="alert alert-info" id="reviewDecisionAlert">
+                            <i class="bi bi-info-circle"></i> <span id="reviewDecisionText"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Comments / Recommendations <span class="text-danger" id="commentsRequired">*</span></label>
+                            <textarea class="form-control" id="review_comments" name="comments" rows="4"
+                                placeholder="Please provide your detailed review comments..."></textarea>
+                            <small class="text-muted" id="commentsHint">Explain your decision and provide recommendations if any.</small>
+                        </div>
+
+                        <!-- ACM Editable Fields -->
+                        <div class="mb-3" id="acm_editable_fields">
+                            <label class="form-label fw-bold text-primary">
+                                <i class="bi bi-pencil"></i> ACM Committee Editable Fields
+                            </label>
+                            <p class="small text-muted">You can edit these fields if needed (leave blank to keep original values):</p>
+                            
+                            <!-- Current Values Display -->
+                            <div class="card bg-light mb-3" id="current_values_card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-secondary mb-2">
+                                        <i class="bi bi-info-circle"></i> Current Values:
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Impact Factor:</strong> 
+                                            <span id="current_impact_factor" class="text-primary">-</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Indexing Type:</strong> 
+                                            <span id="current_indexing_type" class="text-primary">-</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Quartile:</strong> 
+                                            <span id="current_quartile" class="text-primary">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Impact Factor</label>
+                                    <input type="number" class="form-control" id="edit_impact_factor" step="0.001" 
+                                           placeholder="e.g., 2.5">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Indexing Type</label>
+                                    <select class="form-select" id="edit_indexing_type">
+                                        <option value="">-- No Change --</option>
+                                        <option value="Scopus">Scopus</option>
+                                        <option value="Web of Science">Web of Science</option>
+                                        <option value="SCIE">SCIE</option>
+                                        <option value="SSCI">SSCI</option>
+                                        <option value="UGC Care">UGC Care</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Quartile</label>
+                                    <select class="form-select" id="edit_quartile">
+                                        <option value="">-- No Change --</option>
+                                        <option value="Q1">Q1</option>
+                                        <option value="Q2">Q2</option>
+                                        <option value="Q3">Q3</option>
+                                        <option value="Q4">Q4</option>
+                                        <option value="Non-Quartile">Non-Quartile</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> These edits will be saved and applied to the application.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Note:</strong> Your review decision is final and cannot be changed. 
+                            The application requires minimum 2 ACM approvals to proceed to Dean review.
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewApplication(appId) {
+    window.location.href = `/applications/view/${appId}`;
+}
+
+function showReviewModal(appId, decision, appType) {
+    document.getElementById('review_app_id').value = appId;
+    document.getElementById('review_decision').value = decision;
+    document.getElementById('review_comments').value = '';
+    
+    // Reset editable fields
+    document.getElementById('edit_impact_factor').value = '';
+    document.getElementById('edit_indexing_type').value = '';
+    document.getElementById('edit_quartile').value = '';
+    
+    // Hide/show editable fields based on application type
+    const editableFieldsSection = document.getElementById('acm_editable_fields');
+    if (appType === 'conference_registration') {
+        editableFieldsSection.style.display = 'none';
+    } else {
+        editableFieldsSection.style.display = 'block';
+        
+        // Fetch current application data
+        fetch(`/acm/get-application-data/${appId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Display current values
+                    document.getElementById('current_impact_factor').textContent = data.journal_impact_factor || 'Not specified';
+                    document.getElementById('current_indexing_type').textContent = data.indexing_type || 'Not specified';
+                    document.getElementById('current_quartile').textContent = data.journal_quartile || 'Not specified';
+                    
+                    // Add event listeners to update current values when edited
+                    document.getElementById('edit_impact_factor').addEventListener('input', function() {
+                        if (this.value) {
+                            document.getElementById('current_impact_factor').textContent = this.value;
+                            document.getElementById('current_impact_factor').classList.add('text-warning', 'fw-bold');
+                        } else {
+                            document.getElementById('current_impact_factor').textContent = data.journal_impact_factor || 'Not specified';
+                            document.getElementById('current_impact_factor').classList.remove('text-warning', 'fw-bold');
+                        }
+                    });
+                    
+                    document.getElementById('edit_indexing_type').addEventListener('change', function() {
+                        if (this.value) {
+                            document.getElementById('current_indexing_type').textContent = this.value;
+                            document.getElementById('current_indexing_type').classList.add('text-warning', 'fw-bold');
+                        } else {
+                            document.getElementById('current_indexing_type').textContent = data.indexing_type || 'Not specified';
+                            document.getElementById('current_indexing_type').classList.remove('text-warning', 'fw-bold');
+                        }
+                    });
+                    
+                    document.getElementById('edit_quartile').addEventListener('change', function() {
+                        if (this.value) {
+                            document.getElementById('current_quartile').textContent = this.value;
+                            document.getElementById('current_quartile').classList.add('text-warning', 'fw-bold');
+                        } else {
+                            document.getElementById('current_quartile').textContent = data.journal_quartile || 'Not specified';
+                            document.getElementById('current_quartile').classList.remove('text-warning', 'fw-bold');
+                        }
+                    });
+                }
+            });
+    }
+    
+    const decisionText = decision === 'approve' ? 
+        'You are about to APPROVE this application.' : 
+        'You are about to REJECT this application.';
+    document.getElementById('reviewDecisionText').textContent = decisionText;
+    
+    const alertDiv = document.getElementById('reviewDecisionAlert');
+    const commentsRequired = document.getElementById('commentsRequired');
+    const commentsHint = document.getElementById('commentsHint');
+    
+    if (decision === 'approve') {
+        alertDiv.className = 'alert alert-success';
+        commentsRequired.style.display = 'none';  // Hide asterisk for approval
+        commentsHint.textContent = 'Optional: Provide recommendations if needed.';
+    } else {
+        alertDiv.className = 'alert alert-danger';
+        commentsRequired.style.display = 'inline';  // Show asterisk for rejection
+        commentsHint.textContent = 'Required: Explain the reason for rejection.';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+    modal.show();
+}
+
+function submitReview() {
+    const appId = document.getElementById('review_app_id').value;
+    const decision = document.getElementById('review_decision').value;
+    const comments = document.getElementById('review_comments').value.trim();
+    
+    // Validate comments for rejection only
+    if (decision === 'reject' && !comments) {
+        alert('Comments are required when rejecting an application.');
+        return;
+    }
+    
+    // Build edited_fields JSON from form inputs
+    const editedFields = {};
+    const impactFactor = document.getElementById('edit_impact_factor').value;
+    const indexingType = document.getElementById('edit_indexing_type').value;
+    const quartile = document.getElementById('edit_quartile').value;
+    
+    if (impactFactor) {
+        editedFields.journal_impact_factor = parseFloat(impactFactor);
+    }
+    if (indexingType) {
+        editedFields.indexing_type = indexingType;
+    }
+    if (quartile) {
+        editedFields.journal_quartile = quartile;
+    }
+    
+    const editedFieldsJson = Object.keys(editedFields).length > 0 ? JSON.stringify(editedFields) : null;
+    
+    // Show loading
+    const submitBtn = event.target;
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting...';
+    
+    fetch(`/acm/review/${appId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            decision: decision,
+            comments: comments,
+            edited_fields: editedFieldsJson
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to submit review');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting review');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+}
+</script>
+
+<style>
+.badge-sm {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+}
+</style>
+
+{% endblock %}

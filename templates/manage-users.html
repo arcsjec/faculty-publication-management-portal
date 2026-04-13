@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - SJEC Publication Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people"></i> User Management</h2>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    {% if current_user.role == 'hod' %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> As HoD, you can view users from your department only.
+    </div>
+    {% endif %}
+    
+    <div class="card shadow">
+        <div class="card-header bg-sjec-navy text-white">
+            <h5 class="mb-0">All Users ({{ users|length }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            {% if current_user.role == 'principal' %}
+                            <th>Publications</th>
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                {% if user.id == current_user.id %}
+                                <strong>{{ user.name }}</strong> <span class="badge bg-primary">You</span>
+                                {% else %}
+                                {{ user.name }}
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.department.name if user.department else 'N/A' }}</td>
+                            <td>
+                                {% if user.role == 'principal' %}
+                                <span class="badge bg-danger">Principal</span>
+                                {% elif user.role == 'hod' %}
+                                <span class="badge bg-warning">HoD</span>
+                                {% else %}
+                                <span class="badge bg-success">Faculty</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at.strftime('%d-%m-%Y') if user.created_at else 'N/A' }}</td>
+                            {% if current_user.role == 'principal' %}
+                            <td>
+                                {% if user.role == 'faculty' %}
+                                {{ user_pub_counts[user.id] }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.id != current_user.id %}
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="confirmUserDelete({{ user.id }}, {{ user.name|tojson }})"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteUserModal">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if users|length == 0 %}
+            <div class="text-center py-5">
+                <i class="bi bi-people" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No users found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-sjec-navy">{{ users|length }}</h3>
+                    <p class="text-muted mb-0">Total Users</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ users|selectattr('role', 'equalto', 'faculty')|list|length }}</h3>
+                    <p class="text-muted mb-0">Faculty</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ users|selectattr('role', 'equalto', 'hod')|list|length }}</h3>
+                    <p class="text-muted mb-0">HoDs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-danger">{{ users|selectattr('role', 'equalto', 'principal')|list|length }}</h3>
+                    <p class="text-muted mb-0">Principals</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Confirmation Modal -->
+{% if current_user.role == 'principal' %}
+<div class="modal fade" id="deleteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm User Deletion</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete user <strong id="deleteUserName"></strong>?</p>
+                <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> This will also delete all publications associated with this user!</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" id="deleteUserForm" action="">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Delete User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmUserDelete(userId, userName) {
+    document.getElementById('deleteUserName').textContent = userName;
+    document.getElementById('deleteUserForm').action = '/admin/delete_user/' + userId;
+}
+</script>
+{% endif %}
+{% endblock %}

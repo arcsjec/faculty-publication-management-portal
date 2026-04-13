@@ -1,0 +1,486 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistics - SJEC Publication Portal{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-bar-chart"></i> Publication Statistics</h2>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> <strong>{{ dept_name }}</strong> - Showing statistics for {{ total_pubs }} publications
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-sjec-navy text-white shadow-sm">
+                    <div class="card-body text-center">
+                        <h2>{{ total_pubs }}</h2>
+                        <p class="mb-0">Total Publications</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white shadow-sm">
+                    <div class="card-body text-center">
+                        <h2>{{ indexing_counts|length }}</h2>
+                        <p class="mb-0">Indexing Types</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-sjec-gold text-white shadow-sm">
+                    <div class="card-body text-center">
+                        <h2>{{ quartile_counts|length }}</h2>
+                        <p class="mb-0">Quartile Types</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white shadow-sm">
+                    <div class="card-body text-center">
+                        <h2>{{ total_citations }}</h2>
+                        <p class="mb-0">Total Citations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top 5 Faculty -->
+        {% if top_faculty %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="bi bi-trophy-fill"></i> Top 5 Faculty by Publications</h5>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="yearFilter" class="mb-0 me-2 text-white">Year:</label>
+                                <select id="yearFilter" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="">All Years</option>
+                                    {% for year in available_years %}
+                                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Faculty ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        {% if current_user.role in ['principal', 'admin'] %}
+                                        <th>Department</th>
+                                        {% endif %}
+                                        <th>Publications</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for faculty in top_faculty %}
+                                    <tr>
+                                        <td>
+                                            {% if loop.index == 1 %}
+                                                <span class="badge bg-warning text-dark fs-6">🥇 #{{ loop.index }}</span>
+                                            {% elif loop.index == 2 %}
+                                                <span class="badge bg-secondary fs-6">🥈 #{{ loop.index }}</span>
+                                            {% elif loop.index == 3 %}
+                                                <span class="badge bg-info fs-6">🥉 #{{ loop.index }}</span>
+                                            {% else %}
+                                                <span class="badge bg-light text-dark fs-6">#{{ loop.index }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="badge bg-dark">{{ faculty.id }}</span></td>
+                                        <td><strong>{{ faculty.name }}</strong></td>
+                                        <td><small class="text-muted">{{ faculty.email }}</small></td>
+                                        {% if current_user.role in ['principal', 'admin'] %}
+                                        <td>{{ faculty.dept_name }}</td>
+                                        {% endif %}
+                                        <td><span class="badge bg-primary fs-6">{{ faculty.pub_count }}</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Charts Row 1 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-sjec-navy text-white">
+                        <h5 class="mb-0">Year-wise Publications</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="yearChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-sjec-navy text-white">
+                        <h5 class="mb-0">Indexing Status Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="indexingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Row 2 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-sjec-navy text-white">
+                        <h5 class="mb-0">Quartile Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="quartileChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            {% if dept_counts %}
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-sjec-navy text-white">
+                        <h5 class="mb-0">Department-wise Publications</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="deptChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Data Tables -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Year-wise Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th class="text-end">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for year, count in year_counts %}
+                                <tr>
+                                    <td>{{ year }}</td>
+                                    <td class="text-end"><strong>{{ count }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Indexing Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Indexing</th>
+                                    <th class="text-end">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for indexing, count in indexing_counts %}
+                                <tr>
+                                    <td>{{ indexing }}</td>
+                                    <td class="text-end"><strong>{{ count }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            {% if dept_counts %}
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Department-wise Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th class="text-end">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dept, count in dept_counts %}
+                                <tr>
+                                    <td>{{ dept }}</td>
+                                    <td class="text-end"><strong>{{ count }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Quartile Breakdown</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Quartile</th>
+                                    <th class="text-end">Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quartile, count in quartile_counts %}
+                                <tr>
+                                    <td>{{ quartile }}</td>
+                                    <td class="text-end"><strong>{{ count }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart Configuration v2.1 - Updated quartile colors
+// Year-wise Chart
+const yearCtx = document.getElementById('yearChart').getContext('2d');
+const yearChart = new Chart(yearCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for year, count in year_counts %}'{{ year }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Publications',
+            data: [{% for year, count in year_counts %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: '#0a1f44',
+            borderColor: '#0a1f44',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Publications: ' + context.parsed.y;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Indexing Chart
+const indexingCtx = document.getElementById('indexingChart').getContext('2d');
+const indexingChart = new Chart(indexingCtx, {
+    type: 'pie',
+    data: {
+        labels: [{% for indexing, count in indexing_counts %}'{{ indexing }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for indexing, count in indexing_counts %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: ['#0a1f44', '#d4af37', '#28a745', '#17a2b8', '#ffc107', '#dc3545']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return label + ': ' + value + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Quartile Chart
+const quartileCtx = document.getElementById('quartileChart').getContext('2d');
+console.log('Quartile labels:', [{% for quartile, count in quartile_counts %}'{{ quartile }}'{% if not loop.last %}, {% endif %}{% endfor %}]);
+console.log('Quartile data:', [{% for quartile, count in quartile_counts %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}]);
+const quartileChart = new Chart(quartileCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for quartile, count in quartile_counts %}'{{ quartile }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for quartile, count in quartile_counts %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14'],
+            borderColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14'],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: '#000',
+                    font: {
+                        size: 12
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return label + ': ' + value + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+console.log('Quartile chart created:', quartileChart);
+
+{% if dept_counts %}
+// Department Chart
+const deptCtx = document.getElementById('deptChart').getContext('2d');
+
+// Create a temporary div to decode HTML entities
+const decodeHTML = (html) => {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
+};
+
+// Decode department labels (use full names, not truncated)
+const deptLabels = [
+    {% for dept, count in dept_counts %}
+    decodeHTML("{{ dept }}"),
+    {% endfor %}
+];
+
+const deptChart = new Chart(deptCtx, {
+    type: 'bar',
+    data: {
+        labels: deptLabels,
+        datasets: [{
+            label: 'Publications',
+            data: [{% for dept, count in dept_counts %}{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: '#d4af37',
+            borderColor: '#d4af37',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        indexAxis: 'y',
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            },
+            y: {
+                ticks: {
+                    autoSkip: false,
+                    callback: function(value, index) {
+                        // Truncate labels on Y-axis for display, but keep full name in tooltip
+                        const label = this.getLabelForValue(value);
+                        return label.length > 25 ? label.substring(0, 25) + '...' : label;
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    title: function(context) {
+                        // Show full department name in tooltip
+                        return context[0].label;
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+// Year filter for Top 5 Faculty
+document.getElementById('yearFilter').addEventListener('change', function() {
+    const selectedYear = this.value;
+    const currentUrl = new URL(window.location.href);
+    
+    if (selectedYear) {
+        currentUrl.searchParams.set('year', selectedYear);
+    } else {
+        currentUrl.searchParams.delete('year');
+    }
+    
+    window.location.href = currentUrl.toString();
+});
+</script>
+{% endblock %}
